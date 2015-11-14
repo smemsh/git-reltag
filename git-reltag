@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+#
+# git-reltag
+#    add new signed release-X.Y.Z tag, increment last one in branch
+#
+# todo
+#   - allow prefix to be specified; currently hardcoded ('release-')
+#   - allow more than just patchlevel increase (ie major, minor)
+#   - can we make these tags already with some kind of git printfs
+#     rather than parsing its 'describe' output with a regex?
+#
+# stat
+#   - used by author
+#   - please inform if using
+#
+# scott@smemsh.net
+# http://smemsh.net/src/git-foo/
+# http://spdx.org/license/GPL-2.0
+#
+##############################################################################
+
+# tags are parsed from 'describe' into a $release[] dictionary
+# example: release-1.0.4-0-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
+#
+relpat=(
+	prefix	'^(release)-'
+	major	'([[:digit:]]+)\.'
+	minor	'([[:digit:]]+)\.'
+	patch	'([[:digit:]]+)-'
+	changes	'([[:digit:]]+)-'
+	commit	'g([0-9a-f]+)$'
+)
+
+##############################################################################
+
+# - parses 'git describe' output (given as $1)
+# - also takes git branch name (supplied as $2)
+# - creates $message name-val pairs for -m arg to 'git tag'
+# - creates $release[] with indices named by field name with vals
+#
+release_slurp ()
+{
+	local gitdesc="${1:?}"
+	local gitbranch="${2:?}"
+
+	local pattern idx val
+
+	declare -a names
+	declare -a patterns
+
+	for ((i = 0; i < ${#relpat[@]};)); do
+		names+=(${relpat[i++]})
+		patterns+=(${relpat[i++]})
+	done
+
+	local IFS=''; pattern="${patterns[*]}"; unset IFS
+	if ! [[ $gitdesc =~ $pattern ]]; then
+		echo "no match on 'describe' output"; exit 100; fi
+
+	for ((i = 0; i < ${#names[@]};)); do
+		idx=${names[i]}
+		val="${BASH_REMATCH[++i]}"
+		release[$idx]="$val"
+		message+="$idx: $val"
+		message+=$'\n'
+	done
+
+	message+="branch: ${gitbranch##*/}"
+}
+
+# TODO we should do a lot more here
+#
+verify_sanity ()
+{
+	test -d .git || exit 10
+	test -w .git || exit 20
+}
+
+##############################################################################
+
+main ()
+{
+	declare -A release
+	declare -g message
+
+	verify_sanity
+	release_slurp \
+		`git describe --abbrev=999 --long` \
+		`git symbolic-ref -q HEAD` \
+	;
+
+	patchlvl=${release[patch]}
+	let patchlvl++
+
+	newtag=${release[prefix]}
+	newtag+=-${release[major]}
+	newtag+=.${release[minor]}
+	newtag+=.$patchlvl
+
+	if ((${release[changes]} == 0)); then
+		echo "no changes since last tag, aborting"; exit 120; fi
+
+	git tag -s $newtag -m "$message"
+}
+
+main "$@"
