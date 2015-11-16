@@ -297,7 +297,11 @@ do_checkout ()
 	###
 
 	local tag=${tags[$tagmember]}
-	[[ $tag ]] || bomb "no '$tagmember' tag found"
+	[[ $tag ]] ||
+		bomb "no '$tagmember' tag found"
+
+	[[ $tag == ${release['prior']} ]] &&
+		bomb "desired tag already checked out"
 
 	verify_tag $tag ||
 		bomb "tag verify failed: '$tag'"
