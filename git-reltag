@@ -322,13 +322,13 @@ do_tag ()
 		bomb "no changes since last tag made, aborting"
 
 	tagname=${release[prefix]}-$1.$2.$3
-	message+=('tagname: $tagname')
+	message+=("tagname: $tagname")
 
 	local IFS=$'\n'; msg="${message[*]}"; unset IFS
 
 	if git tag -s $tagname -F - <<< "$msg"
 	then
-		echo "tag $tagname successfully created with message:"
+		echo "tag $tagname successfully created, commit message:"
 		echo "$msg"
 	else
 		bomb "tag create failed: '$tagname'"
