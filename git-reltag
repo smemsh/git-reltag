@@ -373,7 +373,7 @@ main ()
 		minorlvl=${release[minor]} \
 		;
 		# carries commit message "field: value" strings
-		declare -a message
+		declare -ga message=()
 	fi
 
 	call $invname "$@" ||
