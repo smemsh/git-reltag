@@ -1,16 +1,35 @@
 #!/usr/bin/env bash
 #
 # git-reltag
-#    add new signed release-X.Y.Z tag, increment last one in branch
+#   subcommands to add/checkout new signed tags based on last tag in branch
 #
-# todo
+# tagging:
+#   patch: add new signed tag 'release-<X>.<Y>.<Z+1>'
+#   minor: add new signed tag 'release-<X>.<Y+1>.0'
+#   major: add new signed tag 'release-<X+1>.0.0'
+#
+# checkout:
+#   next: fetch && verify-tag && checkout, lex next release-X.Y.Z
+#   prev: fetch && verify-tag && checkout, lex prev release-X.Y.Z
+#   sync: fetch && verify-tag && checkout, lex last release-X.Y.Z
+#   ver: fetch && verify-tag && checkout, exact given release tag $1
+#   tag: alias for 'patch' (canonical name, original script)
+#
+# note:
+#   - only fully committed repos can proceed
+#   - for tags, current checkout must be ahead of last tag
+#   - for checkouts, must be an exact detached tag checkout already
+#
+# todo:
+#   - should we use "git reltag foo" instead of "git relfoo" idiom?
 #   - allow prefix to be specified; currently hardcoded ('release-')
-#   - allow more than just patchlevel increase (ie major, minor)
+#   - eval "$varname['foo']=$foo" should be hidden behind an interface
 #   - can we make these tags already with some kind of git printfs
 #     rather than parsing its 'describe' output with a regex?
 #
-# stat
+# stat:
 #   - used by author
+#   - most codepaths debugged, some may remain
 #   - please inform if using
 #
 # scott@smemsh.net
@@ -19,8 +38,10 @@
 #
 ##############################################################################
 
-# tags are parsed from 'describe' into a $release[] dictionary
-# example: release-1.0.4-0-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
+# tags from current checkout are parsed from 'describe' into a
+# $release[] dictionary that contains the commit hash, how many
+# changes we are away from last tag, and what its name was, eg:
+# release-1.0.4-5-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
 #
 relpat=(
 	prefix	'^(release)-'
@@ -31,76 +52,296 @@ relpat=(
 	commit	'g([0-9a-f]+)$'
 )
 
-##############################################################################
+###
 
-# - parses 'git describe' output (given as $1)
-# - also takes git branch name (supplied as $2)
-# - creates $message name-val pairs for -m arg to 'git tag'
-# - creates $release[] with indices named by field name with vals
+bomb () { echo "$@" >&2; exit 1; }
+
+###
+
+# TODO: we should do a lot more here
 #
-release_slurp ()
+verify_sanity_exit ()
 {
-	local gitdesc="${1:?}"
-	local gitbranch="${2:?}"
+	test -d .git || bomb "no gitdir"
+	test -w .git || bomb "cannot write to gitdir"
+	changes_pending && bomb "aborting while changes are pending"
+}
 
-	local pattern idx val
+# - parses 'git describe' output into dictionary var (named as $1)
+# - branch name of given refspec (supplied in $2) stored in 'branch' field
+# - assigns values to fields named in $relpat[] (release pattern regex)
+# - 'message' field contains string of "name: val\n" pairs for 'git tag -m'
+# - reason for $1: formerly, was called twice to build two
+#                  different arrays (TODO: maybe don't care now?)
+#
+slurp_tags ()
+{
+	local idx val
+	declare -g pattern
+	declare -a fields patterns
 
-	declare -a names
-	declare -a patterns
+	local varname="${1:?}"
+	local refspec="${2:?}"
 
+	# create integer-indexed arrays we can use to map associative
+	# indices with parsed substrings from $relpat[]
+	#
 	for ((i = 0; i < ${#relpat[@]};)); do
-		names+=(${relpat[i++]})
+		fields+=(${relpat[i++]})
 		patterns+=(${relpat[i++]})
 	done
 
+	# get git-describe output for the given refspec ($2)
+	#
 	local IFS=''; pattern="${patterns[*]}"; unset IFS
-	if ! [[ $gitdesc =~ $pattern ]]; then
-		echo "no match on 'describe' output"; exit 100; fi
+	local desc=$(git describe --abbrev=999 --long $refspec)
 
-	for ((i = 0; i < ${#names[@]};)); do
-		idx=${names[i]}
-		val="${BASH_REMATCH[++i]}"
-		release[$idx]="$val"
-		message+="$idx: $val"
-		message+=$'\n'
+	# parse into fields of given-named ($1) associative array
+	#
+	# WARNING: only add to $fields[] after this block, otherwise
+	# offsets won't match index with $pattern subexpressions
+	# TODO: make that impossible somehow, probably write an
+	# interface to modify $varname
+	#
+	if [[ $desc =~ $pattern ]]; then
+		for ((i = 0; i < ${#fields[@]};)); do
+			idx=${fields[i]}
+			val="${BASH_REMATCH[++i]}"
+			eval "$varname[$idx]=$val"
+		done
+	else
+		bomb "no match on 'describe' output"
+	fi
+
+	###
+
+	fields+=('desc')
+	eval "$varname['desc']=$desc"
+
+	# add branch name of the given ref, which should
+	# resolve empty (detached head) for checkout case
+	# (we are only to be run from an unchanged exact tag)
+	# (this is tested for in do_checkout())
+	#
+	fields+=('branch')
+	local branchname=$(basename "$(git symbolic-ref -q $refspec)")
+	eval "$varname['branch']='$branchname'"
+
+	# reassemble conventional short tag name and store for
+	# later test of tag match to find out what offset we
+	# are into sorted tag name array
+	#
+	local tagmembers=(
+		${release[prefix]}-
+		${release[major]}.
+		${release[minor]}.
+		${release[patch]}
+	)
+	fields+=('prior')
+	local IFS=; eval "$varname['prior']='${tagmembers[*]}'"; unset IFS
+
+	###
+
+	# create checkin message with [non-empty] text of all
+	# field names and values, storing result in 'message' field
+	#
+	for ((i = 0; i < ${#fields[@]}; i++))
+	do
+		idx=${fields[i]}
+		eval val="\${$varname[$idx]}"
+		if [[ $val ]]; then
+			eval "$varname['message']+='$idx: $val'"
+			eval "$varname['message']+=\$'\\n'"
+		else
+			# skip any empty fields
+			continue
+		fi
 	done
-
-	message+="branch: ${gitbranch##*/}"
 }
 
-# TODO we should do a lot more here
-#
-verify_sanity ()
+determine_desired_tag ()
 {
-	test -d .git || exit 10
-	test -w .git || exit 20
+	local ntags
+
+	if ((${release[changes]} != 0)); then
+		bomb "starting checkout must be at an exact tag"; fi
+
+	taglist=($(git tag -l --sort=version:refname))
+
+	for ((i = 0, ntags = ${#taglist[@]}; i < ntags; i++))
+	do
+		if [[ ${tags['exact']} ]]
+		then
+			if [[ ${tags['exact']} == ${taglist[i]} ]]
+			then
+				return
+			fi
+		elif [[ ${taglist[i]} == ${release['prior']} ]]
+		then
+			tags['cur']=${taglist[i]}
+			tags['prev']=${taglist[i-1]}
+			tags['next']=${taglist[i+1]}
+			tags['last']=${taglist[ntags-1]}
+			return
+		fi
+	done
+
+	# no matching tags found
+	#
+	false; return
+}
+
+# make sure to properly obtain exit code of verify
+# pipeline while postprocessing its output
+#
+verify_tag ()
+{
+	# we run this in a subshell to save pipefail
+	# (TODO save and restore the setting instead?)
+	# maybe pipefail should just be set at script
+	# top, seems like better default anyways
+	#
+	(
+		set -o pipefail
+		git verify-tag -v $1 2>/dev/null \
+		| awk '/^$/ { while (getline) print $0; }'
+	)
+}
+
+# so we can make sure to run only on clean checkouts
+#
+working_changes () { ! git diff --exit-code &>/dev/null; }
+staged_changes  () { ! git diff --cached --exit-code &>/dev/null; }
+changes_pending () { working_changes || staged_changes; }
+
+##############################################################################
+
+do_checkout ()
+{
+	local tagmember=${1:?}
+	local exactver=$2
+
+	local tag
+	declare -A tags
+	declare -a taglist
+
+	# make sure we have latest copy of refs and tags
+	#
+	git fetch ||
+		bomb "fetch failure"
+
+	# we should be in detached head state (no branch) for
+	# the release checkout we run from; if we are actually
+	# on a branch, something is wrong (probably, run from
+	# wrong checkout)
+	#
+	[[ ${release['branch']} ]] &&
+		bomb "checkout must be detached already"
+
+	# if invoked as git-relver, we stuff $tags['exact'] to
+	# tell determine_desired_tag() we want to bypass
+	# calculating a version and go straight to the
+	# designated one (this still verifies tag exists and
+	# has the proper signature)
+	#
+	if [[
+		$invname == 'ver' &&
+		$tagmember == 'exact' &&
+		$exactver \
+	]]; then
+		# we don't have to extend $fields[] along with
+		# the var set because this will never get
+		# written for do_checkout() unlike do_tag()
+		#
+		tags['exact']=${release['prefix']}-$exactver
+	fi
+
+	# determine what tag we match, and the next and
+	# previous ones if we care about those (see $tags[])
+	#
+	determine_desired_tag ||
+		bomb "failed to determine desired tag"
+
+	###
+
+	local tag=${tags[$tagmember]}
+	[[ $tag ]] || bomb "no '$tagmember' tag found"
+
+	verify_tag $tag ||
+		bomb "tag verify failed: '$tag'"
+
+	git checkout -q $tag ||
+		bomb "checkout failed: '$tag'"
+}
+
+do_tag ()
+{
+	[[ ${release[branch]} ]] ||
+		bomb "head detached, must be run from a branch"
+
+	((${release[changes]} == 0)) &&
+		bomb "no changes since last tag made, aborting"
+
+	local tagname=${release[prefix]}-$1.$2.$3
+
+	set -x
+	if ! git tag \
+		-s $tagname \
+		-F - <<< "${release['message']}"
+	then
+		bomb "tag create failed: '$tagname'"
+	fi
 }
 
 ##############################################################################
 
-main ()
+call ()
 {
-	declare -A release
-	declare -g message
+	func=$1; shift
 
-	verify_sanity
-	release_slurp \
-		`git describe --abbrev=999 --long` \
-		`git symbolic-ref -q HEAD` \
-	;
-
-	patchlvl=${release[patch]}
-	let patchlvl++
-
-	newtag=${release[prefix]}
-	newtag+=-${release[major]}
-	newtag+=.${release[minor]}
-	newtag+=.$patchlvl
-
-	if ((${release[changes]} == 0)); then
-		echo "no changes since last tag, aborting"; exit 120; fi
-
-	git tag -s $newtag -m "$message"
+	if [[ `declare -F _$func` ]]
+	then _$func "$@"
+	else echo "$func: unimplemented" >&2; _help; false
+	fi
 }
 
-main "$@"
+main ()
+{
+	verify_sanity_exit
+
+	# create $release[] dictionary indexec by 'git describe'
+	# fields from the local checked out branch into $release[]
+	#
+	declare -A release
+	slurp_tags release HEAD
+	declare -p release
+
+	# make separate integers from release vars so we can do math
+	# on them succinctly to make the new (desired) tag name
+	# (used only by tagging subcommands)
+	#
+	declare -g \
+		patchlvl=${release[patch]} \
+		majorlvl=${release[major]} \
+		minorlvl=${release[minor]} \
+	;
+	call $invname "$@" ||
+		bomb "$invname: failed"
+}
+
+##############################################################################
+
+_patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
+_minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
+_major   () { do_tag $((++majorlvl)) 0 0; }
+_sync    () { do_checkout last; }
+_next    () { do_checkout next; }
+_prev    () { do_checkout prev; }
+_ver     () { do_checkout exact $1; }
+
+_tag     () { _relpatch "$@"; }
+_help    () { declare -F | awk '{print $3}' | grep ^_ | sed s,.,,; }
+
+##############################################################################
+
+invname=${1:?}; shift; main "$@"
