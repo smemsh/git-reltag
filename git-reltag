@@ -325,10 +325,13 @@ do_tag ()
 	tagname=${release[prefix]}-$1.$2.$3
 
 	set -x
-	if ! git tag \
+	if git tag \
 		-s $tagname \
 		-F - <<< "${release['message']}"
 	then
+		echo "tag $tagname created with message:"
+		echo "${release['message']}"
+	else
 		bomb "tag create failed: '$tagname'"
 	fi
 }
