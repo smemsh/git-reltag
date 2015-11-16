@@ -69,7 +69,7 @@ verify_sanity_exit ()
 # - parses 'git describe' output into dictionary var (named as $1)
 # - branch name of given refspec (supplied in $2) stored in 'branch' field
 # - assigns values to fields named in $relpat[] (release pattern regex)
-# - 'message' field contains string of "name: val\n" pairs for 'git tag -m'
+# - $message[] array contains string of "name: val\n" pairs for 'git tag -m'
 # - reason for $1: formerly, was called twice to build two
 #                  different arrays (TODO: maybe don't care now?)
 #
@@ -151,7 +151,6 @@ slurp_tags ()
 
 		# message will only even be used when adding a tag
 		#
-
 		is_tagging_op ||
 			return
 
@@ -171,8 +170,7 @@ slurp_tags ()
 				# then stash field in the tag message
 				#
 				local IFS=; local val="$*"; unset IFS
-				eval "$var['message']+='$field: $val'"
-				eval "$var['message']+=\$'\\n'"
+				message+=("$field: $val")
 			fi
 		else
 			# skip any empty fields
@@ -181,7 +179,7 @@ slurp_tags ()
 	}
 
 	# create checkin message with [non-empty] text of all
-	# field names and values, storing result in 'message' field
+	# field names and values, storing result in $message[]
 	#
 	for ((i = 0; i < ${#fields[@]}; i++))
 	do
@@ -324,14 +322,14 @@ do_tag ()
 		bomb "no changes since last tag made, aborting"
 
 	tagname=${release[prefix]}-$1.$2.$3
+	message+=('tagname: $tagname')
 
-	set -x
-	if git tag \
-		-s $tagname \
-		-F - <<< "${release['message']}"
+	local IFS=$'\n'; msg="${message[*]}"; unset IFS
+
+	if git tag -s $tagname -F - <<< "$msg"
 	then
-		echo "tag $tagname created with message:"
-		echo "${release['message']}"
+		echo "tag $tagname successfully created with message:"
+		echo "$msg"
 	else
 		bomb "tag create failed: '$tagname'"
 	fi
@@ -357,8 +355,8 @@ main ()
 
 	verify_sanity_exit
 
-	# create $release[] dictionary indexed by 'git describe'
-	# fields from the local checked out branch into $release[]
+	# - create $release[] dictionary indexed by 'git describe'
+	#   fields from the local checked out branch into $release[]
 	#
 	declare -A release
 	slurp_tags release HEAD
@@ -367,10 +365,15 @@ main ()
 	# on them succinctly to make the new (desired) tag name
 	#
 	if is_tagging_op
-	then declare -g \
+	then
+		# for building tag name
+		declare -g \
 		patchlvl=${release[patch]} \
 		majorlvl=${release[major]} \
-		minorlvl=${release[minor]}
+		minorlvl=${release[minor]} \
+		;
+		# carries commit message "field: value" strings
+		declare -a message
 	fi
 
 	call $invname "$@" ||
