@@ -141,6 +141,44 @@ slurp_tags ()
 
 	###
 
+	# some fields we don't want in the tag message: empty ones, or
+	# emphemeral ones used to construct desired new tag name, which
+	# can be confusing if inserted into the tag message so we skip
+	#
+	maybe_append_field_to_tag_message ()
+	{
+		local var=$1 field=$2; shift 2
+
+		# message will only even be used when adding a tag
+		#
+		is_tagging_op &&
+			return
+
+		# if not blank,
+		#
+		if (($# > 0))
+		then
+			# and not one of the discarded fields names
+			#
+			if [[
+				$field == 'major' ||
+				$field == 'minor' ||
+				$field == 'patch' \
+			]]; then
+				continue
+			else
+				# then stash field in the tag message
+				#
+				local IFS=; local val="$*"; unset IFS
+				eval "$var['message']+='$field: $val'"
+				eval "$var['message']+=\$'\\n'"
+			fi
+		else
+			# skip any empty fields
+			continue
+		fi
+	}
+
 	# create checkin message with [non-empty] text of all
 	# field names and values, storing result in 'message' field
 	#
@@ -148,13 +186,8 @@ slurp_tags ()
 	do
 		idx=${fields[i]}
 		eval val="\${$varname[$idx]}"
-		if [[ $val ]]; then
-			eval "$varname['message']+='$idx: $val'"
-			eval "$varname['message']+=\$'\\n'"
-		else
-			# skip any empty fields
-			continue
-		fi
+		maybe_append_field_to_tag_message \
+			$varname $idx "$val"
 	done
 }
 
@@ -224,6 +257,9 @@ do_checkout ()
 	declare -A tags
 	declare -a taglist
 
+	is_checkout_op ||
+		bomb "do_checkout invoked for non-checkout scenario"
+
 	# make sure we have latest copy of refs and tags
 	#
 	git fetch ||
@@ -275,13 +311,18 @@ do_checkout ()
 
 do_tag ()
 {
+	local tagname
+
+	is_tagging_op ||
+		bomb "do_tag invoked with non-tag operation"
+
 	[[ ${release[branch]} ]] ||
 		bomb "head detached, must be run from a branch"
 
 	((${release[changes]} == 0)) &&
 		bomb "no changes since last tag made, aborting"
 
-	local tagname=${release[prefix]}-$1.$2.$3
+	tagname=${release[prefix]}-$1.$2.$3
 
 	set -x
 	if ! git tag \
@@ -308,27 +349,30 @@ main ()
 {
 	verify_sanity_exit
 
-	# create $release[] dictionary indexec by 'git describe'
+	# create $release[] dictionary indexed by 'git describe'
 	# fields from the local checked out branch into $release[]
 	#
 	declare -A release
 	slurp_tags release HEAD
-	declare -p release
 
 	# make separate integers from release vars so we can do math
 	# on them succinctly to make the new (desired) tag name
-	# (used only by tagging subcommands)
 	#
-	declare -g \
+	if is_tagging_op
+	then declare -g \
 		patchlvl=${release[patch]} \
 		majorlvl=${release[major]} \
-		minorlvl=${release[minor]} \
-	;
+		minorlvl=${release[minor]}
+	fi
+
 	call $invname "$@" ||
 		bomb "$invname: failed"
 }
 
 ##############################################################################
+
+is_tagging_op   () { [[ $invname =~ '^(patch|minor|major|tag)$' ]]; }
+is_checkout_op  () { [[ $invname =~ '^(sync|next|prev|ver)$' ]]; }
 
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
