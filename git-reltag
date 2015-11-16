@@ -21,7 +21,6 @@
 #   - for checkouts, must be an exact detached tag checkout already
 #
 # todo:
-#   - should we use "git reltag foo" instead of "git relfoo" idiom?
 #   - allow prefix to be specified; currently hardcoded ('release-')
 #   - eval "$varname['foo']=$foo" should be hidden behind an interface
 #   - can we make these tags already with some kind of git printfs
@@ -29,7 +28,7 @@
 #
 # stat:
 #   - used by author
-#   - most codepaths debugged, some may remain
+#   - most codepaths debugged, some remain
 #   - please inform if using
 #
 # scott@smemsh.net
