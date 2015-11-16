@@ -151,6 +151,7 @@ slurp_tags ()
 
 		# message will only even be used when adding a tag
 		#
+
 		is_tagging_op ||
 			return
 
