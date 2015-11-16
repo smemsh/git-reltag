@@ -375,8 +375,8 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $invname =~ '^(patch|minor|major|tag)$' ]]; }
-is_checkout_op  () { [[ $invname =~ '^(sync|next|prev|ver)$' ]]; }
+is_tagging_op   () { [[ $invname =~ ^(patch|minor|major|tag)$   ]]; }
+is_checkout_op  () { [[ $invname =~ ^(sync|next|prev|ver)$      ]]; }
 
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
