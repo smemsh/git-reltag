@@ -261,7 +261,7 @@ do_checkout ()
 
 	# make sure we have latest copy of refs and tags
 	#
-	git fetch ||
+	git fetch --quiet ||
 		bomb "fetch failure"
 
 	# we should be in detached head state (no branch) for
