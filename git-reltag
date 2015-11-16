@@ -176,9 +176,6 @@ slurp_tags ()
 			# skip any empty fields
 			continue
 		fi
-
-		echo message2
-		declare -p message
 	}
 
 	# create checkin message with [non-empty] text of all
@@ -191,9 +188,6 @@ slurp_tags ()
 		maybe_append_field_to_tag_message \
 			$varname $idx "$val"
 	done
-
-	echo message3
-	declare -p message
 }
 
 determine_desired_tag ()
@@ -316,9 +310,6 @@ do_checkout ()
 
 do_tag ()
 {
-	echo message4
-	declare -p message
-
 	local tagname
 
 	is_tagging_op ||
@@ -364,13 +355,11 @@ main ()
 
 	verify_sanity_exit
 
-	echo message0
-	declare -p message
+	declare -A release      # dictionary indexed by 'git describe' fields
+	declare -ga message     # carries commit message "field: value" strings
 
-	# - create $release[] dictionary indexed by 'git describe'
-	#   fields from the local checked out branch into $release[]
+	# read fields from local checked out branch into $release[]
 	#
-	declare -A release
 	slurp_tags release HEAD
 
 	# make separate integers from release vars so we can do math
@@ -384,12 +373,7 @@ main ()
 		majorlvl=${release[major]} \
 		minorlvl=${release[minor]} \
 		;
-		# carries commit message "field: value" strings
-		declare -ga message=()
 	fi
-
-	echo message1
-	declare -p message
 
 	call $invname "$@" ||
 		bomb "$invname: failed"
