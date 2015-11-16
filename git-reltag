@@ -347,6 +347,10 @@ call ()
 
 main ()
 {
+	if (($# == 0))
+	then _help; bomb "must supply subcommand as argument"
+	else invname=$1; shift; fi
+
 	verify_sanity_exit
 
 	# create $release[] dictionary indexed by 'git describe'
@@ -387,4 +391,4 @@ _help    () { declare -F | awk '{print $3}' | grep ^_ | sed s,.,,; }
 
 ##############################################################################
 
-invname=${1:?}; shift; main "$@"
+main "$@"
