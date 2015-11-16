@@ -194,9 +194,6 @@ determine_desired_tag ()
 {
 	local ntags
 
-	if ((${release[changes]} != 0)); then
-		bomb "starting checkout must be at an exact tag"; fi
-
 	taglist=($(git tag -l --sort=version:refname))
 
 	for ((i = 0, ntags = ${#taglist[@]}; i < ntags; i++))
@@ -259,8 +256,9 @@ do_checkout ()
 	is_checkout_op ||
 		bomb "do_checkout invoked for non-checkout scenario"
 
-	# make sure we have latest copy of refs and tags
-	#
+	if ((${release[changes]} != 0)); then
+		bomb "starting checkout must be at an exact tag"; fi
+
 	git fetch --quiet ||
 		bomb "fetch failure"
 
