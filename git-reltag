@@ -7,13 +7,14 @@
 #   patch: add new signed tag 'release-<X>.<Y>.<Z+1>'
 #   minor: add new signed tag 'release-<X>.<Y+1>.0'
 #   major: add new signed tag 'release-<X+1>.0.0'
+#   init:  add new signed tag 'release-0.0.0' (use for first tag)
 #
 # checkout:
 #   next: fetch && verify-tag && checkout, lex next release-X.Y.Z
 #   prev: fetch && verify-tag && checkout, lex prev release-X.Y.Z
 #   sync: fetch && verify-tag && checkout, lex last release-X.Y.Z
-#   ver: fetch && verify-tag && checkout, exact given release tag $1
-#   tag: alias for 'patch' (canonical name, original script)
+#   ver:  fetch && verify-tag && checkout, exact given release tag $1
+#   tag:  alias for 'patch' (canonical name, original script)
 #
 # note:
 #   - only fully committed repos can proceed
@@ -22,6 +23,7 @@
 #
 # todo:
 #   - allow prefix to be specified; currently hardcoded ('release-')
+#   - allow a suffix string to be specified also
 #   - eval "$varname['foo']=$foo" should be hidden behind an interface
 #   - can we make these tags already with some kind of git printfs
 #     rather than parsing its 'describe' output with a regex?
@@ -37,13 +39,17 @@
 #
 ##############################################################################
 
+# all tags we make will have this string prefixed to the version
+#
+tagprefix=release
+
 # tags from current checkout are parsed from 'describe' into a
 # $release[] dictionary that contains the commit hash, how many
 # changes we are away from last tag, and what its name was, eg:
 # release-1.0.4-5-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
 #
 relpat=(
-	prefix	'^(release)-'
+	prefix	"^($tagprefix)-"
 	major	'([[:digit:]]+)\.'
 	minor	'([[:digit:]]+)\.'
 	patch	'([[:digit:]]+)-'
@@ -53,9 +59,11 @@ relpat=(
 
 ###
 
-bomb () { echo "$@" >&2; exit 1; }
+warn        () { echo "$@" >&2; }
+bomb        () { echo "$@" >&2; exit 1; }
+mkdelimstr  () { (($# >= 2)) || return; local IFS="$1"; shift; printf "$*"; }
 
-###
+##############################################################################
 
 # TODO: we should do a lot more here
 #
@@ -66,17 +74,17 @@ verify_sanity_exit ()
 	changes_pending && bomb "aborting while changes are pending"
 }
 
-# - parses 'git describe' output into dictionary var (named as $1)
+# - parses 'git describe' (or 'show' for initial tag) into the dict named $1
 # - branch name of given refspec (supplied in $2) stored in 'branch' field
 # - assigns values to fields named in $relpat[] (release pattern regex)
 # - $message[] array contains string of "name: val\n" pairs for 'git tag -m'
 # - reason for $1: formerly, was called twice to build two
 #                  different arrays (TODO: maybe don't care now?)
 #
-slurp_tags ()
+slurp_checkout ()
 {
 	local idx val
-	declare -g pattern
+	local pattern desc commit
 	declare -a fields patterns
 
 	local varname="${1:?}"
@@ -90,32 +98,55 @@ slurp_tags ()
 		patterns+=(${relpat[i++]})
 	done
 
-	# get git-describe output for the given refspec ($2)
-	#
-	local IFS=''; pattern="${patterns[*]}"; unset IFS
-	local desc=$(git describe --abbrev=999 --long $refspec)
+	if [[ $invname == 'init' ]]
+	then
+		# first tag won't have any of the previous tag
+		# info, we only want to store the commit hash
+		#
+		commit=$(git show --no-patch --pretty=format:%H)
+		[[ $commit ]] ||
+			bomb "unable to determine commit hash"
+		eval "$varname['commit']=$commit"
 
-	# parse into fields of given-named ($1) associative array
-	#
-	# WARNING: only add to $fields[] after this block, otherwise
-	# offsets won't match index with $pattern subexpressions
-	# TODO: make that impossible somehow, probably write an
-	# interface to modify $varname
-	#
-	if [[ $desc =~ $pattern ]]; then
-		for ((i = 0; i < ${#fields[@]};)); do
-			idx=${fields[i]}
-			val="${BASH_REMATCH[++i]}"
-			eval "$varname[$idx]=$val"
-		done
+		# (since we don't do regex match of recent tag for init)
+		#
+		release['prefix']=$tagprefix
 	else
-		bomb "no match on 'describe' output"
+		# parse into fields of given-named ($1) associative
+		# array WARNING: only add to $fields[] after this block,
+		# otherwise offsets won't match index with $pattern
+		# subexpressions
+		# TODO: make that impossible somehow, probably write
+		# an interface to modify $varname
+		#
+		desc=$(git describe --abbrev=999 --long $refspec)
+		pattern=`mkdelimstr '' "${patterns[@]}"`
+		if [[ $desc =~ $pattern ]]; then
+			for ((i = 0; i < ${#fields[@]};)); do
+				idx=${fields[i]}
+				val="${BASH_REMATCH[++i]}"
+				eval "$varname[$idx]=$val"
+			done
+		else
+			bomb "no match on 'describe' output, try 'init'"
+		fi
+
+		fields+=('desc')
+		eval "$varname['desc']=$desc"
+
+		# reassemble conventional short tag name and store for
+		# later test of tag match to find out what offset we
+		# are into sorted tag name array
+		#
+		local tagmembers=(
+			${release[prefix]}-
+			${release[major]}.
+			${release[minor]}.
+			${release[patch]}
+		)
+		fields+=('prior')
+		eval "$varname['prior']='$(mkdelimstr '' ${tagmembers[@]})'"
 	fi
-
-	###
-
-	fields+=('desc')
-	eval "$varname['desc']=$desc"
 
 	# add branch name of the given ref, which should
 	# resolve empty (detached head) for checkout case
@@ -125,19 +156,6 @@ slurp_tags ()
 	fields+=('branch')
 	local branchname=$(basename "$(git symbolic-ref -q $refspec)")
 	eval "$varname['branch']='$branchname'"
-
-	# reassemble conventional short tag name and store for
-	# later test of tag match to find out what offset we
-	# are into sorted tag name array
-	#
-	local tagmembers=(
-		${release[prefix]}-
-		${release[major]}.
-		${release[minor]}.
-		${release[patch]}
-	)
-	fields+=('prior')
-	local IFS=; eval "$varname['prior']='${tagmembers[*]}'"; unset IFS
 
 	###
 
@@ -156,7 +174,7 @@ slurp_tags ()
 
 		# if not blank,
 		#
-		if (($# > 0))
+		if (($# > 0)) && [[ $1 ]]
 		then
 			# and not one of the discarded fields names
 			#
@@ -169,7 +187,7 @@ slurp_tags ()
 			else
 				# then stash field in the tag message
 				#
-				local IFS=; local val="$*"; unset IFS
+				val=$(mkdelimstr '' "$@")
 				message+=("$field: $val")
 			fi
 		else
@@ -306,12 +324,13 @@ do_checkout ()
 	verify_tag $tag ||
 		bomb "tag verify failed: '$tag'"
 
-	git checkout -q $tag ||
+	echo git checkout -q $tag ||
 		bomb "checkout failed: '$tag'"
 }
 
 do_tag ()
 {
+	local major=$1 minor=$2 patch=$3
 	local tagname
 
 	is_tagging_op ||
@@ -320,15 +339,16 @@ do_tag ()
 	[[ ${release[branch]} ]] ||
 		bomb "head detached, must be run from a branch"
 
-	((${release[changes]} == 0)) &&
-		bomb "no changes since last tag made, aborting"
+	if [[ $invname != 'init' ]]; then
+		if ((${release[changes]} == 0)); then
+			bomb "no changes since last tag made, aborting"; fi; fi
 
-	tagname=${release[prefix]}-$1.$2.$3
+	tagname=${release[prefix]}-$major.$minor.$patch
 	message+=("tagname: $tagname")
 
-	local IFS=$'\n'; msg="${message[*]}"; unset IFS
+	msg="$(mkdelimstr $'\n' "${message[@]}")"
 
-	if git tag -s $tagname -F - <<< "$msg"
+	if echo git tag -s $tagname -F - <<< "$msg"
 	then
 		echo "tag $tagname successfully created, commit message:"
 		echo "$msg"
@@ -362,7 +382,7 @@ main ()
 
 	# read fields from local checked out branch into $release[]
 	#
-	slurp_tags release HEAD
+	slurp_checkout release HEAD
 
 	# make separate integers from release vars so we can do math
 	# on them succinctly to make the new (desired) tag name
@@ -383,18 +403,20 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $invname =~ ^(patch|minor|major|tag)$   ]]; }
-is_checkout_op  () { [[ $invname =~ ^(sync|next|prev|ver)$      ]]; }
+is_tagging_op   () { [[ $invname =~ ^(init|patch|minor|major|tag)$      ]]; }
+is_checkout_op  () { [[ $invname =~ ^(sync|next|prev|ver)$              ]]; }
 
+_init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
+_tag     () { _relpatch "$@"; }
+
 _sync    () { do_checkout last; }
 _next    () { do_checkout next; }
 _prev    () { do_checkout prev; }
 _ver     () { do_checkout exact $1; }
 
-_tag     () { _relpatch "$@"; }
 _help    () { declare -F | awk '{print $3}' | grep ^_ | sed s,.,,; }
 
 ##############################################################################
