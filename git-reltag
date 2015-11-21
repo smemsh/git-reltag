@@ -24,7 +24,6 @@
 # todo:
 #   - allow prefix to be specified; currently hardcoded ('release-')
 #   - allow a suffix string to be specified also
-#   - eval "$varname['foo']=$foo" should be hidden behind an interface
 #   - can we make these tags already with some kind of git printfs
 #     rather than parsing its 'describe' output with a regex?
 #
@@ -76,7 +75,7 @@ verify_sanity_exit ()
 	changes_pending && bomb "aborting while changes are pending"
 }
 
-# - parses 'git describe' (or 'show' for initial tag) into the dict named $1
+# - parses 'git describe' (or 'show' for initial tag) into $release[] dict
 # - branch name of given refspec (supplied in $2) stored in 'branch' field
 # - assigns values to fields named in $relpat[] (release pattern regex)
 # - $message[] array contains string of "name: val\n" pairs for 'git tag -m'
@@ -108,7 +107,7 @@ slurp_checkout ()
 		commit=$(git show --no-patch --pretty=format:%H)
 		[[ $commit ]] ||
 			bomb "unable to determine commit hash"
-		eval "$varname['commit']=$commit"
+		release['commit']="$commit"
 
 		# (since we don't do regex match of recent tag for init)
 		#
@@ -127,14 +126,14 @@ slurp_checkout ()
 			for ((i = 0; i < ${#fields[@]};)); do
 				idx=${fields[i]}
 				val="${BASH_REMATCH[++i]}"
-				eval "$varname[$idx]=$val"
+				release[$idx]="$val"
 			done
 		else
 			bomb "no match on 'describe' output, try 'init'"
 		fi
 
 		fields+=('desc')
-		eval "$varname['desc']=$desc"
+		release['desc']="$desc"
 
 		# reassemble conventional short tag name and store for
 		# later test of tag match to find out what offset we
@@ -147,7 +146,7 @@ slurp_checkout ()
 			${release['patch']}
 		)
 		fields+=('prior')
-		eval "$varname['prior']='$(strcat ${tagmembers[@]})'"
+		release['prior']="$(strcat ${tagmembers[@]})"
 	fi
 
 	# add branch name of the given ref, which should
@@ -157,7 +156,7 @@ slurp_checkout ()
 	#
 	fields+=('branch')
 	local branchname=$(basename "$(git symbolic-ref -q $refspec)")
-	eval "$varname['branch']='$branchname'"
+	release['branch']="$branchname"
 
 	###
 
@@ -204,7 +203,7 @@ slurp_checkout ()
 	for ((i = 0; i < ${#fields[@]}; i++))
 	do
 		idx=${fields[i]}
-		eval val="\${$varname[$idx]}"
+		val="${release[$idx]}"
 		maybe_append_field_to_tag_message \
 			$varname $idx "$val"
 	done
