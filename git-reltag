@@ -382,12 +382,11 @@ main ()
 
 	slurp_checkout HEAD	# read metadata into $release[]
 
-	# make separate integers from release vars so we can do math
-	# on them succinctly to make the new (desired) tag name
-	#
 	if is_tagging_op
 	then
-		# for building tag name
+		# keep version components in separate scalars we can
+		# manipulate to build tag name without altering $release[] 
+		#
 		declare -g \
 		patchlvl=${release['patch']} \
 		majorlvl=${release['major']} \
