@@ -238,10 +238,9 @@ determine_desired_tag ()
 #
 verify_tag ()
 {
-	# we run this in a subshell to save pipefail
-	# (TODO save and restore the setting instead?)
-	# maybe pipefail should just be set at script
-	# top, seems like better default anyways
+	# we run this in a subshell to keep pipefail setting,
+	# and do it here to make it obvious during later
+	# code edits to pay attention to verify-tag for security
 	#
 	(
 		set -o pipefail
