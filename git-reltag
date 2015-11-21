@@ -104,7 +104,7 @@ slurp_checkout ()
 		# first tag won't have any of the previous tag
 		# info, we only want to store the commit hash
 		#
-		commit=$(git show --no-patch --pretty=format:%H)
+		commit=`git show --no-patch --pretty=format:%H`
 		[[ $commit ]] ||
 			bomb "unable to determine commit hash"
 		release['commit']="$commit"
@@ -120,7 +120,7 @@ slurp_checkout ()
 		# TODO: make that impossible somehow, probably write
 		# an interface to modify $varname
 		#
-		desc=$(git describe --abbrev=999 --long $refspec)
+		desc=`git describe --abbrev=999 --long $refspec`
 		pattern=`strcat "${patterns[@]}"`
 		if [[ $desc =~ $pattern ]]; then
 			for ((i = 0; i < ${#fields[@]};)); do
@@ -146,7 +146,7 @@ slurp_checkout ()
 			${release['patch']}
 		)
 		fields+=('prior')
-		release['prior']="$(strcat ${tagmembers[@]})"
+		release['prior']="`strcat ${tagmembers[@]}`"
 	fi
 
 	# add branch name of the given ref, which should
@@ -155,8 +155,8 @@ slurp_checkout ()
 	# (this is tested for in do_checkout())
 	#
 	fields+=('branch')
-	local branchname=$(basename "$(git symbolic-ref -q $refspec)")
-	release['branch']="$branchname"
+	local branchname="`git symbolic-ref -q $refspec`"
+	release['branch']="${branchname##*/}"
 
 	###
 
@@ -188,7 +188,7 @@ slurp_checkout ()
 			else
 				# then stash field in the tag message
 				#
-				val=$(strcat "$@")
+				val=`strcat "$@"`
 				message+=("$field: $val")
 			fi
 		else
@@ -213,7 +213,7 @@ determine_desired_tag ()
 {
 	local ntags
 
-	taglist=($(git tag -l --sort=version:refname))
+	taglist=(`git tag -l --sort=version:refname`)
 
 	for ((i = 0, ntags = ${#taglist[@]}; i < ntags; i++))
 	do
