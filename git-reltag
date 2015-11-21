@@ -141,10 +141,10 @@ slurp_checkout ()
 		# are into sorted tag name array
 		#
 		local tagmembers=(
-			${release[prefix]}-
-			${release[major]}.
-			${release[minor]}.
-			${release[patch]}
+			${release['prefix']}-
+			${release['major']}.
+			${release['minor']}.
+			${release['patch']}
 		)
 		fields+=('prior')
 		eval "$varname['prior']='$(strcat ${tagmembers[@]})'"
@@ -276,7 +276,7 @@ do_checkout ()
 	is_checkout_op ||
 		bomb "do_checkout invoked for non-checkout scenario"
 
-	if ((${release[changes]} != 0)); then
+	if ((${release['changes']} != 0)); then
 		bomb "starting checkout must be at an exact tag"; fi
 
 	git fetch --quiet ||
@@ -338,14 +338,14 @@ do_tag ()
 	is_tagging_op ||
 		bomb "do_tag invoked with non-tag operation"
 
-	[[ ${release[branch]} ]] ||
+	[[ ${release['branch']} ]] ||
 		bomb "head detached, must be run from a branch"
 
 	if [[ $invname != 'init' ]]; then
-		if ((${release[changes]} == 0)); then
+		if ((${release['changes']} == 0)); then
 			bomb "no changes since last tag made, aborting"; fi; fi
 
-	tagname=${release[prefix]}-$major.$minor.$patch
+	tagname=${release['prefix']}-$major.$minor.$patch
 	message+=("tagname: $tagname")
 
 	msg="$(strdelim $'\n' "${message[@]}")"
@@ -393,9 +393,9 @@ main ()
 	then
 		# for building tag name
 		declare -g \
-		patchlvl=${release[patch]} \
-		majorlvl=${release[major]} \
-		minorlvl=${release[minor]} \
+		patchlvl=${release['patch']} \
+		majorlvl=${release['major']} \
+		minorlvl=${release['minor']} \
 		;
 	fi
 
