@@ -319,7 +319,7 @@ do_checkout ()
 	verify_tag $tag ||
 		bomb "tag verify failed: '$tag'"
 
-	echo git checkout -q $tag ||
+	git checkout -q $tag ||
 		bomb "checkout failed: '$tag'"
 }
 
@@ -343,7 +343,7 @@ do_tag ()
 
 	msg="$(strdelim $'\n' "${message[@]}")"
 
-	if echo git tag -s $tagname -F - <<< "$msg"
+	if git tag -s $tagname -F - <<< "$msg"
 	then
 		echo "tag $tagname successfully created, commit message:"
 		echo "$msg"
