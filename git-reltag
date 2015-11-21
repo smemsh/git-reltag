@@ -371,12 +371,12 @@ main ()
 	declare -A release      # dictionary indexed by 'git describe' fields
 	declare -ga message     # carries commit message "field: value" strings
 
-	if ! is_valid_op; then
-		warn "$invname: unrecognized command"; _help; false; exit; fi
-
 	if [[ $invname == '--help' ||
 		$invname == '-h' ||
 		$invname == 'help' ]]; then _help; exit; fi
+
+	if ! is_valid_op; then
+		warn "$invname: unrecognized command"; _help; false; exit; fi
 
 	if (($# == 0)); then
 		_help; bomb "must supply subcommand as argument"; fi
@@ -405,7 +405,7 @@ main ()
 
 is_tagging_op   () { [[ $invname =~ ^(init|patch|minor|major|tag)$      ]]; }
 is_checkout_op  () { [[ $invname =~ ^(sync|next|prev|ver)$              ]]; }
-is_valid_op     () { is_tagging_op $invname || is_checkout_op $invname;     }
+is_valid_op     () { is_tagging_op || is_checkout_op;     }
 
 _init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
