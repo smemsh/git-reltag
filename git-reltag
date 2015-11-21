@@ -360,7 +360,7 @@ call ()
 
 	if [[ `declare -F _$func` ]]
 	then _$func "$@"
-	else echo "$func: unimplemented" >&2; _help; false
+	else warn "$func: unimplemented"; _help; false
 	fi
 }
 
@@ -372,7 +372,7 @@ main ()
 	declare -ga message     # carries commit message "field: value" strings
 
 	if ! is_valid_op; then
-		warn "$invname: unrecognized command"; _help; exit 1; fi
+		warn "$invname: unrecognized command"; _help; false; exit; fi
 
 	if [[ $invname == '--help' ||
 		$invname == '-h' ||
