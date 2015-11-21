@@ -20,6 +20,7 @@
 #   - only fully committed repos can proceed
 #   - for tags, current checkout must be ahead of last tag
 #   - for checkouts, must be an exact detached tag checkout already
+#   - without any args, executes as if given 'patch'
 #
 # todo:
 #   - allow prefix to be specified; currently hardcoded ('release-')
@@ -371,15 +372,15 @@ main ()
 	declare -A release      # dictionary indexed by 'git describe' fields
 	declare -ga message     # carries commit message "field: value" strings
 
+	if (($# == 0)); then
+		invname=patch; fi
+
 	if [[ $invname == '--help' ||
 		$invname == '-h' ||
 		$invname == 'help' ]]; then _help; exit; fi
 
 	if ! is_valid_op; then
 		warn "$invname: unrecognized command"; _help; false; exit; fi
-
-	if (($# == 0)); then
-		_help; bomb "must supply subcommand as argument"; fi
 
 	verify_sanity_exit "$@"
 
