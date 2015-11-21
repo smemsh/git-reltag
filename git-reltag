@@ -372,7 +372,7 @@ main ()
 	declare -A release      # dictionary indexed by 'git describe' fields
 	declare -ga message     # carries commit message "field: value" strings
 
-	if (($# == 0)); then
+	if ! [[ $invname ]]; then
 		invname=patch; fi
 
 	if [[ $invname == '--help' ||
