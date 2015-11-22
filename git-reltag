@@ -17,10 +17,10 @@
 #   tag:  alias for 'patch' (canonical name, original script)
 #
 # note:
+#   - without any args, executes as if given 'patch'
 #   - only fully committed repos can proceed
 #   - for tags, current checkout must be ahead of last tag
 #   - for checkouts, must be an exact detached tag checkout already
-#   - without any args, executes as if given 'patch'
 #
 # todo:
 #   - allow prefix to be specified; currently hardcoded ('release-')
@@ -114,7 +114,7 @@ slurp_checkout ()
 		# otherwise offsets won't match index with $pattern
 		# subexpressions
 		# TODO: make that impossible somehow, probably write
-		# an interface to modify $varname
+		# an interface to modify $release[] dictionary
 		#
 		desc=`git describe --abbrev=999 --long HEAD`
 		pattern=`strcat "${patterns[@]}"`
@@ -162,18 +162,19 @@ slurp_checkout ()
 	#
 	maybe_append_field_to_tag_message ()
 	{
-		local var=$1 field=$2; shift 2
+		local field=$1; shift
 
 		# message will only even be used when adding a tag
 		#
 		is_tagging_op ||
 			return
 
-		# if not blank,
+		# if args were provided (after we shifted off field name)
+		# and it's not blank,
 		#
-		if (($# > 0)) && [[ $1 ]]
+		if (($#)) && [[ $1 ]]
 		then
-			# and not one of the discarded fields names
+			# ...and it's not one of the field names we discard,
 			#
 			if [[
 				$field == 'major' ||
@@ -182,7 +183,7 @@ slurp_checkout ()
 			]]; then
 				continue
 			else
-				# then stash field in the tag message
+				# ...then stash field in the tag message array
 				#
 				val=`strcat "$@"`
 				message+=("$field: $val")
@@ -200,8 +201,7 @@ slurp_checkout ()
 	do
 		idx=${fields[i]}
 		val="${release[$idx]}"
-		maybe_append_field_to_tag_message \
-			$varname $idx "$val"
+		maybe_append_field_to_tag_message $idx "$val"
 	done
 }
 
