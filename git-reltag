@@ -109,8 +109,9 @@ slurp_checkout ()
 		#
 		release['prefix']=$tagprefix
 	else
-		# parse into fields of given-named ($1) associative
-		# array WARNING: only add to $fields[] after this block,
+		# parse into fields of $release[] array
+		#
+		# WARNING: only add to $fields[] after this block,
 		# otherwise offsets won't match index with $pattern
 		# subexpressions
 		# TODO: make that impossible somehow, probably write
@@ -125,7 +126,9 @@ slurp_checkout ()
 				release[$idx]="$val"
 			done
 		else
-			bomb "no match on 'describe' output, try 'init'"
+			bomb "no match for pattern '$pattern'" \
+				"in 'describe' output '$desc'," $'\n' \
+				"try 'init' or use matching head"
 		fi
 
 		fields+=('desc')
