@@ -211,6 +211,8 @@ determine_desired_tag ()
 	local ntags
 
 	taglist=(`git tag -l --sort=version:refname`)
+	(($debug)) && declare -p taglist
+	(($debug)) && declare -p release
 
 	for ((i = 0, ntags = ${#taglist[@]}; i < ntags; i++))
 	do
@@ -222,10 +224,13 @@ determine_desired_tag ()
 			fi
 		elif [[ ${taglist[i]} == ${release['prior']} ]]
 		then
+			(($debug)) && set -x
 			tags['cur']=${taglist[i]}
 			tags['prev']=${taglist[i-1]}
 			tags['next']=${taglist[i+1]}
 			tags['last']=${taglist[ntags-1]}
+			(($debug)) && set +x
+			true
 			return
 		fi
 	done
