@@ -23,7 +23,7 @@
 #   - for checkouts, current must be an exact detached tag already
 #
 # todo:
-#   - allow prefix to be specified; currently hardcoded ('release-')
+#   - allow prefix to be specified instead of only branch name
 #   - allow a suffix string to be specified
 #   - can we make these tags already with some kind of git printfs
 #     rather than parsing 'describe' output with a regex?
@@ -39,17 +39,18 @@
 #
 ##############################################################################
 
-# all tags we make will have this string prefixed to the version
+# regex of valid identifiers for tag prefix (we use branch name)
+# cf: git-check-ref-format
 #
-tagprefix=release
+tagvalids='[[:alnum:]_/]'
 
 # tags from current checkout are parsed from 'describe' into a
 # $release[] dictionary that contains the commit hash, how many
 # changes we are away from last tag, and what its name was, eg:
-# release-1.0.4-5-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
+# master-1.0.4-5-g41f7b4f76d51119fe91d2e14c9ea1c021713b015
 #
 relpat=(
-	prefix	"^($tagprefix)-"
+	prefix	"^($tagvalids+)-"
 	major	'([[:digit:]]+)\.'
 	minor	'([[:digit:]]+)\.'
 	patch	'([[:digit:]]+)-'
@@ -76,7 +77,8 @@ verify_sanity_exit ()
 
 # - parses 'git describe' (or 'show' for initial tag) into $release[] dict
 # - assigns values to fields named in $relpat[] (release pattern regex)
-# - branch name of checkout stored in 'branch' field
+# - branch name from closest tag to checkout stored in 'prefix' field
+# - branch name of current checked out branch stored in 'branch' field
 # - $message[] array contains string of "name: val\n" pairs for 'git tag -m'
 #
 slurp_checkout ()
@@ -102,10 +104,6 @@ slurp_checkout ()
 		[[ $commit ]] ||
 			bomb "unable to determine commit hash"
 		release['commit']="$commit"
-
-		# (since we don't do regex match of recent tag for init)
-		#
-		release['prefix']=$tagprefix
 	else
 		# parse describe output into fields of $release[] array
 		#
@@ -146,10 +144,11 @@ slurp_checkout ()
 		release['prior']="`strcat ${tagmembers[@]}`"
 	fi
 
-	# add branch name of the given ref, which should
-	# resolve empty (detached head) for checkout case
-	# (we are only to be run from an unchanged exact tag)
-	# (this is tested for in do_checkout())
+	# add branch name of current checkout
+	# checkout ops: branch name should be empty (detached head),
+	#   since we are only to be run from an unchanged exact tag
+	#   (tested for in do_checkout())
+	# tagging ops: branch name will be used as the tag prefix
 	#
 	fields+=('branch')
 	local branchname="`git symbolic-ref -q HEAD`"
@@ -208,9 +207,11 @@ slurp_checkout ()
 
 determine_desired_tag ()
 {
-	local ntags
+	local tag ntags
 
-	taglist=(`git tag -l --sort=version:refname`)
+	taglist=($(git tag --list --sort=version:refname \
+			"${release['prefix']}-*"))
+
 	(($debug)) && declare -p taglist
 	(($debug)) && declare -p release
 
@@ -344,7 +345,7 @@ do_tag ()
 		if ((${release['changes']} == 0)); then
 			bomb "no changes since last tag made, aborting"; fi; fi
 
-	tagname=${release['prefix']}-$major.$minor.$patch
+	tagname=${release['branch']}-$major.$minor.$patch
 	message+=("tagname: $tagname")
 
 	msg="$(strdelim $'\n' "${message[@]}")"
