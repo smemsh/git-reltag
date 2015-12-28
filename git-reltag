@@ -67,8 +67,6 @@ strdelim    () { (($# >= 2)) || return; local IFS="$1"; shift; printf "$*"; }
 
 ##############################################################################
 
-# TODO: we should do a lot more here
-#
 verify_sanity_exit ()
 {
 	test -d .git || bomb "no gitdir"
