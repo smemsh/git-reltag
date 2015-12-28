@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
 #
 # git-reltag
-#   subcommands to add/checkout new signed tags based on last tag in branch
+#   add or checkout signed tags based on last tag in branch
 #
 # tagging:
-#   patch: add new signed tag 'release-<X>.<Y>.<Z+1>'
-#   minor: add new signed tag 'release-<X>.<Y+1>.0'
-#   major: add new signed tag 'release-<X+1>.0.0'
-#   init:  add new signed tag 'release-0.0.0' (use for first tag)
+#   patch: add new signed tag '<branch>-<X>.<Y>.<Z+1>'
+#   minor: add new signed tag '<branch>-<X>.<Y+1>.0'
+#   major: add new signed tag '<branch>-<X+1>.0.0'
+#   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
 #
 # checkout:
-#   next: fetch && verify-tag && checkout, lex next release-X.Y.Z
-#   prev: fetch && verify-tag && checkout, lex prev release-X.Y.Z
-#   sync: fetch && verify-tag && checkout, lex last release-X.Y.Z
+#   next: fetch && verify-tag && checkout, next <branch>-<X>.<Y>.<Z>
+#   prev: fetch && verify-tag && checkout, prev <branch>-<X>.<Y>.<Z>
+#   sync: fetch && verify-tag && checkout, last <branch>-<X>.<Y>.<Z>
 #   ver:  fetch && verify-tag && checkout, exact given release tag $1
 #   tag:  alias for 'patch' (canonical name, original script)
 #
 # note:
 #   - without any args, executes as if given 'patch'
-#   - only fully committed repos can proceed
+#   - refuses action in uncommitted repositories
 #   - for tags, current checkout must be ahead of last tag
-#   - for checkouts, must be an exact detached tag checkout already
+#   - for checkouts, current must be an exact detached tag already
 #
 # todo:
 #   - allow prefix to be specified; currently hardcoded ('release-')
-#   - allow a suffix string to be specified also
+#   - allow a suffix string to be specified
 #   - can we make these tags already with some kind of git printfs
-#     rather than parsing its 'describe' output with a regex?
+#     rather than parsing 'describe' output with a regex?
 #
 # stat:
-#   - used by author
+#   - used by author to develop and deploy
 #   - most codepaths debugged, some remain
 #   - please inform if using
 #
@@ -287,7 +287,7 @@ do_checkout ()
 	[[ ${release['branch']} ]] &&
 		bomb "checkout must be detached already"
 
-	# if invoked as git-relver, we stuff $tags['exact'] to
+	# if invoked as reltag ver, we stuff $tags['exact'] to
 	# tell determine_desired_tag() we want to bypass
 	# calculating a version and go straight to the
 	# designated one (this still verifies tag exists and
