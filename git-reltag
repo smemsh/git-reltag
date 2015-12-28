@@ -266,7 +266,6 @@ do_checkout ()
 
 	local tag
 	declare -A tags
-	declare -a taglist
 
 	is_checkout_op ||
 		bomb "do_checkout invoked for non-checkout scenario"
