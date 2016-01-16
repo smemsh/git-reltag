@@ -40,7 +40,7 @@
 ##############################################################################
 
 # regex of valid identifiers for tag prefix (we use branch name)
-# cf: git-check-ref-format
+# cf: git-check-ref-format (we only allow a subset for now)
 #
 tagvalids='[[:alnum:]_/]'
 
