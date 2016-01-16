@@ -42,7 +42,7 @@
 # regex of valid identifiers for tag prefix (we use branch name)
 # cf: git-check-ref-format (we only allow a subset for now)
 #
-tagvalids='[[:alnum:]_/]'
+tagvalids='[[:alnum:]_-/]'
 
 # tags from current checkout are parsed from 'describe' into a
 # $release[] dictionary that contains the commit hash, how many
