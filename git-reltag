@@ -374,9 +374,8 @@ main ()
 	declare -A release      # fields initialized from current checkout
 	declare -ga message     # carries commit message "field: value" strings
 
-	if [[ $command == '--help' ||
-		$command == '-h' ||
-		$command == 'help' ]]; then _help; exit; fi
+	if [[ $command =~ ^(-h|-?-help)$ ]]; then
+		_help; exit; fi
 
 	verify_sanity_exit "$@"
 
