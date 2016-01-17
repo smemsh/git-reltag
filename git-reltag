@@ -64,7 +64,7 @@ warn        () { echo "$@" >&2; }
 bomb        () { echo "$@" >&2; exit 1; }
 
 strcat      () { strdelim '' "$@"; }
-strdelim    () { (($# >= 2)) || return; local IFS="$1"; shift; printf "$*"; }
+strdelim    () { (($# > 1)) && { local IFS="$1"; shift; printf "$*"; }; }
 
 ##############################################################################
 
