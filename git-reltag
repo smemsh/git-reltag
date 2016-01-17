@@ -17,10 +17,9 @@
 #   ver:  fetch && verify && checkout, exact given release tag $1
 #
 # note:
-#   - without any args, executes as if given 'patch'
+#   - without args, executes 'patch' if on branch, 'sync' if detached
 #   - refuses action in uncommitted repositories (dirty work area)
 #   - for tagging ops, checkout must have had commits since last tag
-#   - for checkouts, current must be an exact detached tag already
 #
 # todo:
 #   - allow user-specified tag prefix instead of branch name
@@ -281,34 +280,26 @@ do_checkout ()
 	is_checkout_op ||
 		bomb "do_checkout invoked for non-checkout scenario"
 
-	if ((${release['changes']} != 0)); then
-		bomb "starting checkout must be at an exact tag"; fi
-
 	git fetch --quiet ||
 		bomb "fetch failure"
 
-	# we should be in detached head state (no branch) for
-	# the release checkout we run from; if we are actually
-	# on a branch, something is wrong (probably, run from
-	# wrong checkout)
-	#
-	[[ ${release['branch']} ]] &&
-		bomb "checkout must be detached already"
+	if [[ ${release['branch']} ]]
+	then
+		warn "deploying over checked out branch" \
+			"'${release['branch']}'"
+	else
+		((${release['changes']} == 0)) ||
+			bomb "detached checkouts must be at exact tag"
+	fi
 
-	# if invoked as reltag ver, we stuff $tags['exact'] to
-	# tell determine_desired_tag() we want to bypass
-	# calculating a version and go straight to the
-	# designated one (this still verifies tag exists and
-	# has the proper signature)
-	#
-	if [[
-		$command == 'ver' &&
-		$tagmember == 'exact' &&
-		$exactver \
-	]]; then
-		# we don't have to extend $fields[] along with
-		# the var set because this will never get
-		# written for do_checkout() unlike do_tag()
+	if [[ $command == 'ver' &&
+	      $tagmember == 'exact' &&
+	      $exactver ]]
+	then
+		# tell determine_desired_tag() we want to
+		# bypass calculating a version and go straight
+		# to the designated one (this still verifies
+		# tag exists and has the proper signature)
 		#
 		tags['exact']=${release['prefix']}-$exactver
 	fi
@@ -383,9 +374,6 @@ main ()
 	declare -A release      # fields initialized from current checkout
 	declare -ga message     # carries commit message "field: value" strings
 
-	if ! [[ $command ]]; then
-		command=patch; fi
-
 	if [[ $command == '--help' ||
 		$command == '-h' ||
 		$command == 'help' ]]; then _help; exit; fi
@@ -396,6 +384,18 @@ main ()
 	# tagging ops: branch name will be used as the tag prefix
 	#
 	release['branch']=`git symbolic-ref --quiet --short HEAD`
+
+	if ! [[ $command ]]
+	then
+		if ! [[ ${release['branch']} ]]
+		then
+			# detached head, assume we're in a deploy checkout
+			command=sync
+		else
+			# if on a branch, we're probably in development checkout
+			command=patch
+		fi
+	fi
 
 	if ! is_valid_op; then
 		warn "$command: unrecognized command"; _help; false; exit; fi
