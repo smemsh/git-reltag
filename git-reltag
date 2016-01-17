@@ -196,6 +196,8 @@ slurp_checkout ()
 		fi
 	}
 
+	((debug)) && declare -p release
+
 	# create checkin message with [non-empty] text of all
 	# field names and values, storing result in $message[]
 	#
