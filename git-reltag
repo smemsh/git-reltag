@@ -392,7 +392,8 @@ main ()
 
 	verify_sanity_exit "$@"
 
-	slurp_checkout HEAD	# read metadata into $release[]
+	# populate $release[]
+	slurp_checkout
 
 	if is_tagging_op
 	then
