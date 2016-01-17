@@ -156,9 +156,7 @@ slurp_checkout ()
 
 	###
 
-	# some fields we don't want in the tag message: empty ones, or
-	# emphemeral ones used to construct desired new tag name, which
-	# can be confusing if inserted into the tag message so we skip
+	# some fields we don't want in the tag message
 	#
 	maybe_append_field_to_tag_message ()
 	{
@@ -175,6 +173,10 @@ slurp_checkout ()
 		if (($#)) && [[ $1 ]]
 		then
 			# ...and it's not one of the field names we discard,
+			# (these were only used during construction of tag name
+			# and don't have the correct data that corresponds to
+			# the tag itself, resulting in confusion if put in the
+			# tag message)
 			#
 			if [[
 				$field == 'major' ||
