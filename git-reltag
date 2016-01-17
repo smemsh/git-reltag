@@ -124,26 +124,29 @@ parse_describe ()
 #
 slurp_checkout ()
 {
-	local desc commit name
-
-	desc=`git describe --abbrev=999 --long HEAD`
-	release['desc']=$desc
-	parse_describe $desc
+	local name
 
 	if [[ $command == 'init' ]]
 	then
 		# first tag won't have any of the previous tag info, we
-		# only want to store the commit hash
+		# only need to store the commit hash
 		#
-		commit=`git show --no-patch --pretty=format:%H`
+		local commit=`git show --no-patch --pretty=format:%H`
 		[[ $commit ]] ||
 			bomb "unable to determine commit hash"
 		release['commit']="$commit"
 	else
-		# reassemble conventional short tag name and store for
-		# later test of tag match to find out what offset we
-		# are into sorted tag name array
+		# for subsequent tags (when this is not our first run),
+		# read in 'describe' output of the checkout and use it
+		# to reassemble tag name, storing for later test to find
+		# out what offset current checkout is into sorted tag
+		# name array (for deducing relative tags like 'next')
 		#
+		local desc=`git describe --abbrev=999 --long HEAD`
+		[[ $desc ]] ||
+			bomb "no describe output; try init?"
+		release['desc']=$desc
+		parse_describe $desc
 		local tagmembers=(
 			${release['prefix']}-
 			${release['major']}.
