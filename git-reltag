@@ -209,27 +209,32 @@ determine_desired_tag ()
 {
 	local tag ntags
 
-	taglist=($(git tag --list --sort=version:refname \
-			"${release['prefix']}-*"))
+	# note: we narrow possible tags to prefix, which is based on
+	# describe of current checkout (and bypass if $tags['exact'] is set)
+	#
+	taglist=($(git tag --list --sort=version:refname "${release['prefix']}-*"))
+	ntags=${#taglist[@]}
+	tags['last']=${taglist[ntags-1]}
 
 	(($debug)) && declare -p taglist
 	(($debug)) && declare -p release
 
-	for ((i = 0, ntags = ${#taglist[@]}; i < ntags; i++))
+	for ((i = 0; i < ntags; i++))
 	do
 		if [[ ${tags['exact']} ]]
 		then
+			# tag was specified exactly by the user
 			if [[ ${tags['exact']} == ${taglist[i]} ]]
 			then
 				return
 			fi
 		elif [[ ${taglist[i]} == ${release['prior']} ]]
 		then
+			# relative tags rely on current checkout
 			(($debug)) && set -x
 			tags['cur']=${taglist[i]}
 			tags['prev']=${taglist[i-1]}
 			tags['next']=${taglist[i+1]}
-			tags['last']=${taglist[ntags-1]}
 			(($debug)) && set +x
 			true
 			return
