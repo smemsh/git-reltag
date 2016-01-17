@@ -144,16 +144,6 @@ slurp_checkout ()
 		release['prior']="`strcat ${tagmembers[@]}`"
 	fi
 
-	# add branch name of current checkout
-	# checkout ops: branch name should be empty (detached head),
-	#   since we are only to be run from an unchanged exact tag
-	#   (tested for in do_checkout())
-	# tagging ops: branch name will be used as the tag prefix
-	#
-	fields+=('branch')
-	local branchname="`git symbolic-ref -q HEAD`"
-	release['branch']="${branchname##*/}"
-
 	###
 
 	# some fields we don't want in the tag message
@@ -389,10 +379,15 @@ main ()
 		$command == '-h' ||
 		$command == 'help' ]]; then _help; exit; fi
 
+	verify_sanity_exit "$@"
+
+	# checkout ops: branch name may be empty, indicating deploy checkout
+	# tagging ops: branch name will be used as the tag prefix
+	#
+	release['branch']=`git symbolic-ref --quiet --short HEAD`
+
 	if ! is_valid_op; then
 		warn "$command: unrecognized command"; _help; false; exit; fi
-
-	verify_sanity_exit "$@"
 
 	# populate $release[]
 	slurp_checkout
