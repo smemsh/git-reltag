@@ -88,7 +88,7 @@ slurp_checkout ()
 	declare -a fields patterns
 
 	# create integer-indexed arrays we can use to map associative
-	# indices with parsed substrings from $relpat[]
+	# indices with parsed substrings from $relpat[] (-> $pattern)
 	#
 	for ((i = 0; i < ${#relpat[@]};)); do
 		fields+=(${relpat[i++]})
