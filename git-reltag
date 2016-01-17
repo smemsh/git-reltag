@@ -415,7 +415,7 @@ main ()
 
 is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|tag)$      ]]; }
 is_checkout_op  () { [[ $command =~ ^(sync|next|prev|ver)$              ]]; }
-is_valid_op     () { is_tagging_op || is_checkout_op;     }
+is_valid_op     () { is_tagging_op || is_checkout_op;                       }
 
 _init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
