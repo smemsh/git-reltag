@@ -396,8 +396,8 @@ main ()
 
 	if is_tagging_op
 	then
-		# keep version components in separate scalars we can
-		# manipulate to build tag name without altering $release[] 
+		# keep version components in separate global scalars we can
+		# manipulate to build tag name without altering $release[]
 		#
 		declare -g \
 		patchlvl=${release['patch']} \
