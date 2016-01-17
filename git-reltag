@@ -8,13 +8,13 @@
 #   minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 #   major: add new signed tag '<branch>-<X+1>.0.0'
 #   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
+#   tag:   alias for 'patch' (canonical name, original script)
 #
 # deploy:
 #   next: fetch && verify-tag && checkout, next <branch>-<X>.<Y>.<Z>
 #   prev: fetch && verify-tag && checkout, prev <branch>-<X>.<Y>.<Z>
 #   sync: fetch && verify-tag && checkout, last <branch>-<X>.<Y>.<Z>
 #   ver:  fetch && verify-tag && checkout, exact given release tag $1
-#   tag:  alias for 'patch' (canonical name, original script)
 #
 # note:
 #   - without any args, executes as if given 'patch'
