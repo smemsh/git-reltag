@@ -377,7 +377,7 @@ main ()
 {
 	command=$1; shift
 
-	declare -A release      # dictionary indexed by 'git describe' fields
+	declare -A release      # fields initialized from current checkout
 	declare -ga message     # carries commit message "field: value" strings
 
 	if ! [[ $command ]]; then
