@@ -428,7 +428,7 @@ _next    () { do_checkout next; }
 _prev    () { do_checkout prev; }
 _ver     () { do_checkout exact $1; }
 
-_help    () { declare -F | awk '{print $3}' | grep ^_ | sed s,.,,; }
+_help    () { compgen -A function _ | sed s,.,,; }
 
 ##############################################################################
 
