@@ -283,9 +283,6 @@ do_checkout ()
 	is_checkout_op ||
 		bomb "do_checkout invoked for non-checkout scenario"
 
-	git fetch --quiet ||
-		bomb "fetch failure"
-
 	if [[ ${release['branch']} ]]
 	then
 		warn "deploying over checked out branch" \
@@ -402,7 +399,16 @@ main ()
 	if ! is_valid_op; then
 		warn "$command: unrecognized command"; _help; false; exit; fi
 
-	# populate $release[]
+	if is_checkout_op
+	then
+		# update tags before trying to parse 'describe' output
+		# since it determines closest tag
+		git fetch --tags --quiet ||
+			bomb "fetch failure"
+	fi
+
+	# populate $release[] with info from current checkout
+	#
 	slurp_checkout
 
 	if is_tagging_op
