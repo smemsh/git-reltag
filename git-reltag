@@ -18,8 +18,8 @@
 #
 # note:
 #   - without any args, executes as if given 'patch'
-#   - refuses action in uncommitted repositories
-#   - for tags, current checkout must be ahead of last tag
+#   - refuses action in uncommitted repositories (dirty work area)
+#   - for tagging ops, checkout must have had commits since last tag
 #   - for checkouts, current must be an exact detached tag already
 #
 # todo:
