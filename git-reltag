@@ -11,10 +11,10 @@
 #   tag:   alias for 'patch' (canonical name, original script)
 #
 # deploy:
-#   next: fetch && verify-tag && checkout, next <branch>-<X>.<Y>.<Z>
-#   prev: fetch && verify-tag && checkout, prev <branch>-<X>.<Y>.<Z>
-#   sync: fetch && verify-tag && checkout, last <branch>-<X>.<Y>.<Z>
-#   ver:  fetch && verify-tag && checkout, exact given release tag $1
+#   next: fetch && verify && checkout, next <branch>-<X>.<Y>.<Z>
+#   prev: fetch && verify && checkout, prev <branch>-<X>.<Y>.<Z>
+#   sync: fetch && verify && checkout, last <branch>-<X>.<Y>.<Z>
+#   ver:  fetch && verify && checkout, exact given release tag $1
 #
 # note:
 #   - without any args, executes as if given 'patch'
