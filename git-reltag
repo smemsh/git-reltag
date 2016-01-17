@@ -76,24 +76,60 @@ verify_sanity_exit ()
 }
 
 # - parses 'git describe' (or 'show' for initial tag) into $release[] dict
-# - assigns values to fields named in $relpat[] (release pattern regex)
-# - branch name from closest tag to checkout stored in 'prefix' field
-# - branch name of current checked out branch stored in 'branch' field
-# - $message[] array contains string of "name: val\n" pairs for 'git tag -m'
+# - key in ordered $fields[] maps to numbered expr in $pattern (from $relpat[])
 #
-slurp_checkout ()
+parse_describe ()
 {
-	local idx val
-	local pattern desc commit
+	local desc=$1
+	local idx val pattern i
 	declare -a fields patterns
 
+	#
 	# create integer-indexed arrays we can use to map associative
 	# indices with parsed substrings from $relpat[] (-> $pattern)
 	#
+	# release[field] = \1 from regex
+	# fields[0] = field name for \1 from regex
+	# fields[1] = field name for \2 from regex, etc
+	# release[$fields[0]] = corresponding field from 'git describe'
+	#
+	# example: release['major'], field[3]='major' ties 3rd
+	#   subexpression in regex to 'major' key in $release[] dict
+	#
+
 	for ((i = 0; i < ${#relpat[@]};)); do
 		fields+=(${relpat[i++]})
 		patterns+=(${relpat[i++]})
 	done
+
+	pattern=`strcat "${patterns[@]}"`
+	if [[ $desc =~ $pattern ]]; then
+		for ((i = 0; i < ${#fields[@]};)); do
+			idx=${fields[i]}
+			val="${BASH_REMATCH[++i]}"
+			release[$idx]="$val"
+		done
+	else
+		bomb "no match for pattern '$pattern'" \
+			"in 'describe' output '$desc'," $'\n' \
+			"try 'init' or use matching head"
+	fi
+}
+
+# store fields corresponding to the checkout in $release[]
+#
+# - prefix of the tag nearest checkout is stored in 'prefix' field
+# - branch name (maybe empty) of current checkout stored in 'branch' field
+# - fields from 'git describe' copied into $release[] via parse_describe()
+# - $message[] populated by "name: val\n" pairs from $release[] for tag message
+#
+slurp_checkout ()
+{
+	local desc commit name
+
+	desc=`git describe --abbrev=999 --long HEAD`
+	release['desc']=$desc
+	parse_describe $desc
 
 	if [[ $command == 'init' ]]
 	then
@@ -105,31 +141,6 @@ slurp_checkout ()
 			bomb "unable to determine commit hash"
 		release['commit']="$commit"
 	else
-		# parse describe output into fields of $release[] array
-		#
-		# WARNING: only add to $fields[] after this block,
-		# otherwise offsets won't match index with $pattern
-		# subexpressions
-		# TODO: make that impossible somehow, probably write
-		# an interface to modify $release[] dictionary
-		#
-		desc=`git describe --abbrev=999 --long HEAD`
-		pattern=`strcat "${patterns[@]}"`
-		if [[ $desc =~ $pattern ]]; then
-			for ((i = 0; i < ${#fields[@]};)); do
-				idx=${fields[i]}
-				val="${BASH_REMATCH[++i]}"
-				release[$idx]="$val"
-			done
-		else
-			bomb "no match for pattern '$pattern'" \
-				"in 'describe' output '$desc'," $'\n' \
-				"try 'init' or use matching head"
-		fi
-
-		fields+=('desc')
-		release['desc']="$desc"
-
 		# reassemble conventional short tag name and store for
 		# later test of tag match to find out what offset we
 		# are into sorted tag name array
@@ -140,7 +151,6 @@ slurp_checkout ()
 			${release['minor']}.
 			${release['patch']}
 		)
-		fields+=('prior')
 		release['prior']="`strcat ${tagmembers[@]}`"
 	fi
 
@@ -177,8 +187,7 @@ slurp_checkout ()
 			else
 				# ...then stash field in the tag message array
 				#
-				val=`strcat "$@"`
-				message+=("$field: $val")
+				message+=("$field: $(strcat "$@")")
 			fi
 		else
 			# skip any empty fields
@@ -190,13 +199,10 @@ slurp_checkout ()
 
 	# create checkin message with [non-empty] text of all
 	# field names and values, storing result in $message[]
-	#
-	for ((i = 0; i < ${#fields[@]}; i++))
-	do
-		idx=${fields[i]}
-		val="${release[$idx]}"
-		maybe_append_field_to_tag_message $idx "$val"
-	done
+
+	for name in ${!release[@]}; do
+		maybe_append_field_to_tag_message \
+			$name "${release[$name]}"; done
 }
 
 determine_desired_tag ()
