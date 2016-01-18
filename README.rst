@@ -205,6 +205,9 @@ TODO
 - allow user-specified tag prefix instead of branch name
 - allow suffix string to be specified as well
 - forward the gpg verify, avoiding need to trust deploy host's keystore
+- mode with less output, maybe just from and to tagname
+- configurable fields to go into tag message
+- tag message injection from external scripts
 
 
 Status
