@@ -30,7 +30,7 @@ Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Subcommands are provided for tagging, checkout, and initialization:
-| ``git reltag <subcommand>``
+``git reltag <subcommand>``
 
 - **deploys** can checkout a specific tag, the one before or after the
   checked out one, or the last one that tagged the deploy's parent
