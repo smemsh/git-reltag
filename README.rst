@@ -1,7 +1,7 @@
 git-reltag
 ==============================================================================
 
-Add or checkout signed tags based on last tag in branch
+Maintain signed version tags for release and manage deployment checkouts
 
 | scott@smemsh.net
 | http://smemsh.net/src/git-reltag/
