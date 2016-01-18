@@ -39,6 +39,7 @@ Subcommands are provided for tagging, checkout, and initialization:
   ordinals (resetting less significant ones to zero); a subcommand is
   provided for each of these intentions.
 
+
 release subcommands
 -------------------
 
