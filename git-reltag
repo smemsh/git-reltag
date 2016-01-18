@@ -441,7 +441,6 @@ _init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
-_tag     () { _relpatch "$@"; }
 
 _sync    () { do_checkout last; }
 _next    () { do_checkout next; }
