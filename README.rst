@@ -128,7 +128,7 @@ Example
 
     $ touch anotherfile
     $ git add anotherfile
-    $ git ci -m 'add another file'
+    $ git commit -m 'add another file'
     $ git reltag
     tag master-0.0.1 successfully created, commit message:
     branch: master
@@ -160,7 +160,7 @@ Example
 
     $ echo 'ready for version 1' > README
     $ git add README
-    $ git ci -m 'prep readme for GA release'
+    $ git commit -m 'prep readme for GA release'
     $ git reltag major
     tag master-1.0.0 successfully created, commit message:
     branch: master
