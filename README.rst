@@ -171,7 +171,7 @@ Example
     prefix: master
     tagname: master-1.0.0
 
-#. and again the deploy will pull it in with no args
+#. and again the deploy will pull it in with no args::
 
     $ pushd
     /tmp/project/deploy /tmp/project/develop
@@ -185,7 +185,7 @@ Example
     prefix: master
     tagname: master-1.0.0
 
-#. found a bug, take the deploy back to prior (working) release:
+#. found a bug, take the deploy back to prior (working) release::
 
     $ git reltag prev
     branch: master
