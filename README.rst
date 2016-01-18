@@ -209,6 +209,7 @@ TODO
 - mode with less output, maybe just from and to tagname
 - configurable fields to go into tag message
 - tag message injection from external scripts
+- local deploys might better use shared repos ie multi-checkout
 
 
 Status
