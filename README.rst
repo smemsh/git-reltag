@@ -204,7 +204,7 @@ TODO
 
 - allow user-specified tag prefix instead of branch name
 - allow suffix string to be specified as well
-- some way to forward the gpg verify so we don't have to trust deploy host's key
+- forward the gpg verify, avoiding need to trust deploy host's keystore
 
 
 Status
