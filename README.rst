@@ -1,8 +1,6 @@
 git-reltag
 ==============================================================================
 
-*"git release/tag"*
-
 Add or checkout signed tags based on last tag in branch
 
 | scott@smemsh.net
