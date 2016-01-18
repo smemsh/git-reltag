@@ -8,7 +8,6 @@
 #   minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 #   major: add new signed tag '<branch>-<X+1>.0.0'
 #   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
-#   tag:   alias for 'patch' (canonical name, original script)
 #
 # deploy:
 #   sync: fetch && verify && checkout, last <branch>-<X>.<Y>.<Z>
@@ -434,7 +433,7 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|tag)$      ]]; }
+is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major)$          ]]; }
 is_checkout_op  () { [[ $command =~ ^(sync|next|prev|ver)$              ]]; }
 is_valid_op     () { is_tagging_op || is_checkout_op;                       }
 

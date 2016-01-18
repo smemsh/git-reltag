@@ -46,7 +46,6 @@ release subcommands
 :minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 :major: add new signed tag '<branch>-<X+1>.0.0'
 :init:  add new signed tag '<branch>-0.0.0' (use for first tag)
-:tag:   alias for 'patch' (canonical name, original script)
 
 
 deploy subcommands
