@@ -52,9 +52,9 @@ release subcommands
 deploy subcommands
 ------------------
 
-:sync: fetch && verify && checkout, last <branch>-<X>.<Y>.<Z>
-:next: fetch && verify && checkout, next <branch>-<X>.<Y>.<Z>
-:prev: fetch && verify && checkout, prev <branch>-<X>.<Y>.<Z>
+:sync: fetch && verify && checkout, last tag on parent branch
+:next: fetch && verify && checkout, tag just after the checkout
+:prev: fetch && verify && checkout, tag just before the checkout
 :ver:  fetch && verify && checkout, exact given release tag $1
 
 
