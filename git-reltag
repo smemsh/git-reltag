@@ -316,8 +316,13 @@ do_checkout ()
 	[[ $tag ]] ||
 		bomb "no '$tagmember' tag found"
 
-	[[ $tag == ${release['prior']} ]] &&
-		bomb "desired tag already checked out"
+	if [[ $tag == ${release['prior']} ]]
+	then
+		if [[ ${release['branch']} ]]
+		then warn "branch head matches desired tag, detaching..."
+		else bomb "desired tag already checked out"
+		fi
+	fi
 
 	verify_tag $tag ||
 		bomb "tag verify failed: '$tag'"
