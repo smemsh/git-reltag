@@ -63,8 +63,8 @@ default subcommand
 
 If no subcommand specified, default depends on current checkout:
 
-:detached tag: *deploy latest tag of parent branch* (**sync**)
-:on branch: *add new tag incrementing patchlevel* (**patch**)
+:detached tag: *deploy latest tag of parent branch* ('**sync**')
+:on branch: *add new tag incrementing patchlevel* ('**patch**')
 
 
 safeties
