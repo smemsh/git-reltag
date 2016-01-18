@@ -277,6 +277,13 @@ do_checkout ()
 
 	if [[ ${release['branch']} ]]
 	then
+		# note: this won't ever happen if invoked
+		# no-args: if on branch, default is to do a
+		# tag, so for this to happen requires 'sync'
+		# to be given explicitly; user would do this
+		# usually after 'init' to detach the head
+		# (declaring it a deploy checkout)
+		#
 		warn "deploying over checked out branch" \
 			"'${release['branch']}'"
 	else
