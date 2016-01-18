@@ -11,16 +11,17 @@ Maintain signed version tags for release and manage deployment checkouts
 Description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Do cryptographically-verified checkouts of signed tags ('*deploys*'), or
-add new signed tags ('*releases*'), based on current tag list and state
-of checkout (branch, nearest tag, change count).
+Do cryptographically-verified checkouts of signed tags, or add new
+signed tags, with version numbers based on the current checkout.  Three
+ordinals are used to represent version info, ala the `Semantic
+Versioning`__ scheme.
 
-New tags are prefixed with the branch name on which the tag occurred.
-Deployment selects the target tag after first narrowing to prefix of the
-current checkout (as determined by ``git describe``.
+- **releases** (new tags) are prefixed with the branch name on which the
+  tag occurred, and the new version number, relative to the last one
+- **deploys** (checkouts) select the target tag after first narrowing
+  matches to prefix of the current checkout (as determined by ``git
+  describe``) and doing requested math if relative (i.e. 'next', 'prev')
 
-Three ordinals are used to represent version info, ala the `Semantic
-versioning`__ scheme, using a *version-sort* to determine progeny.
 
 __ http://semver.org/
 
@@ -28,14 +29,15 @@ __ http://semver.org/
 Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Subcommands are provided for tagging, checkout, and initialization.
+Subcommands are provided for tagging, checkout, and initialization:
+| ``git reltag <subcommand>``
 
-**Deploys** can checkout a specific tag, the one before or after the
-checked out one, or the last one that tagged the deploy's parent branch.
-
-**Releases** add a new signed tag, incrementing any of the three
-ordinals (resetting less significant ones to zero); a subcommand is
-provided for each of these intentions.
+- **deploys** can checkout a specific tag, the one before or after the
+  checked out one, or the last one that tagged the deploy's parent
+  branch.
+- **releases** add a new signed tag, incrementing any of the three
+  ordinals (resetting less significant ones to zero); a subcommand is
+  provided for each of these intentions.
 
 release subcommands
 -------------------
@@ -59,7 +61,7 @@ deploy subcommands
 default subcommand
 ------------------
 
-If no subcommand given, default depends on current checkout:
+If no subcommand specified, default depends on current checkout:
 
 :detached tag: *deploy latest tag of parent branch* (**sync**)
 :on branch: *add new tag incrementing patchlevel* (**patch**)
