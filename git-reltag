@@ -10,9 +10,9 @@
 #   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
 #
 # deploy:
-#   sync: fetch && verify && checkout, last <branch>-<X>.<Y>.<Z>
-#   next: fetch && verify && checkout, next <branch>-<X>.<Y>.<Z>
-#   prev: fetch && verify && checkout, prev <branch>-<X>.<Y>.<Z>
+#   sync: fetch && verify && checkout, last tag on branch
+#   next: fetch && verify && checkout, next tag on branch
+#   prev: fetch && verify && checkout, previous tag on branch
 #   ver:  fetch && verify && checkout, exact given release tag $1
 #
 # note:
@@ -20,15 +20,8 @@
 #   - refuses action in uncommitted repositories (dirty work area)
 #   - for tagging ops, checkout must have had commits since last tag
 #
-# todo:
-#   - allow user-specified tag prefix instead of branch name
-#   - allow suffix string to be specified as well
-#   - can we make these tags already with some kind of git printfs
-#     rather than parsing 'describe' output with a regex?
-#
 # stat:
 #   - used by author to develop and deploy
-#   - most codepaths debugged, some remain, should write tests
 #   - please inform if using
 #
 # scott@smemsh.net
