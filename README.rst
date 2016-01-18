@@ -211,5 +211,5 @@ Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - used by author to develop and deploy
-- most codepaths debugged, some remain, should write tests
+- really needs tests to make code changes safer
 - please inform if using
