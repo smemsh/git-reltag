@@ -383,6 +383,18 @@ main ()
 
 	verify_sanity_exit "$@"
 
+       if is_checkout_op
+       then
+               # update tags before trying to parse 'describe' output
+               # since it determines closest tag
+               git fetch --tags --quiet ||
+                       bomb "fetch failure"
+       fi
+
+	# populate $release[] with info from current checkout
+	#
+	slurp_checkout
+
 	# checkout ops: branch name may be empty, indicating deploy checkout
 	# tagging ops: branch name will be used as the tag prefix
 	#
@@ -402,18 +414,6 @@ main ()
 
 	if ! is_valid_op; then
 		warn "$command: unrecognized command"; _help; false; exit; fi
-
-	if is_checkout_op
-	then
-		# update tags before trying to parse 'describe' output
-		# since it determines closest tag
-		git fetch --tags --quiet ||
-			bomb "fetch failure"
-	fi
-
-	# populate $release[] with info from current checkout
-	#
-	slurp_checkout
 
 	if is_tagging_op
 	then
