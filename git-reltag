@@ -8,6 +8,7 @@
 #   minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 #   major: add new signed tag '<branch>-<X+1>.0.0'
 #   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
+#   match: add new signed tag matching last one (with different branch)
 #
 # deploy:
 #   sync: fetch && verify && checkout, last tag on branch
@@ -341,6 +342,10 @@ do_tag ()
 	[[ ${release['branch']} ]] ||
 		bomb "head detached, must be run from a branch"
 
+	if [[ $command == 'match' ]]; then
+		if ! ((${release['forked']})); then
+			bomb "version match meaningless on same branch"; fi; fi
+
 	if [[ $command != 'init' ]]; then
 		if ((${release['changes']} == 0)); then
 			bomb "no changes since last tag made, aborting"; fi; fi
@@ -397,6 +402,14 @@ main ()
 	#
 	release['branch']=`git symbolic-ref --quiet --short HEAD`
 
+	# detect when we're on a forked branch we rebase periodically
+	# (in which case "describe" will show the origin branch, not the branch
+	# we're on, since we just tagged the origin prior to a rebase so it's
+	# now the closest tag)
+	#
+	if [[ ${release['branch']} != ${release['prefix']} ]]; then
+		release['forked']=1; fi
+
 	if ! [[ $command ]]
 	then
 		if ! [[ ${release['branch']} ]]
@@ -404,8 +417,16 @@ main ()
 			# detached head, assume we're in a deploy checkout
 			command=sync
 		else
-			# if on a branch, we're probably in development checkout
-			command=patch
+			# if on a branch, we're probably in the dev checkout,
+			# so we want to do a tag; use matching tag if we're in
+			# a rebase-fork, or default to incremental patch if
+			# we're on same branch as we were when doing last tag
+			#
+			if [[ ${release['forked']} ]]; then
+				command=match
+			else
+				command=patch
+			fi
 		fi
 	fi
 
@@ -430,7 +451,7 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major)$  ]]; }
+is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|match)$ ]]; }
 is_checkout_op  () { [[ $command =~ ^(sync|next|prev|ver)$      ]]; }
 is_valid_op     () { is_tagging_op || is_checkout_op;               }
 
@@ -438,6 +459,7 @@ _init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
+_match   () { do_tag $majorlvl $minorlvl $patchlvl; }
 
 _sync    () { do_checkout last; }
 _next    () { do_checkout next; }

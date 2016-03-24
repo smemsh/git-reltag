@@ -47,6 +47,7 @@ release subcommands
 :minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 :major: add new signed tag '<branch>-<X+1>.0.0'
 :init:  add new signed tag '<branch>-0.0.0' (use for first tag)
+:match: add new signed tag matching last one (with different branch)
 
 
 deploy subcommands
@@ -210,6 +211,7 @@ TODO
 - configurable fields to go into tag message
 - tag message injection from external scripts
 - local deploys might better use shared repos ie multi-checkout
+- document why we would want to use 'match' subcommand
 
 
 Status
