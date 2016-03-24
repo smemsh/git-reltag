@@ -383,13 +383,10 @@ main ()
 
 	verify_sanity_exit "$@"
 
-       if is_checkout_op
-       then
-               # update tags before trying to parse 'describe' output
-               # since it determines closest tag
-               git fetch --tags --quiet ||
-                       bomb "fetch failure"
-       fi
+	# update tags before trying to parse 'describe' output
+	# since it determines closest tag
+	git fetch --tags --quiet ||
+		bomb "fetch failure"
 
 	# populate $release[] with info from current checkout
 	#
