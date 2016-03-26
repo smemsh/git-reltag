@@ -370,6 +370,25 @@ call ()
 {
 	func=$1; shift
 
+	# in case of unspecified op that we determined was a tag op, we
+	# needed to slurp the checkout before determining which tag op
+	# to use, so we deferred resolution until the actual call()
+	#
+	if [[ $func == 'defer' ]]
+	then
+		# detect when we're on a forked branch we rebase
+		# periodically (in which case "describe" will show the
+		# origin branch, not the branch we're on, since we just
+		# tagged the origin prior to a rebase so it's now the
+		# closest tag) or default to incremental patch if we're
+		# on same branch as we were when doing last tag
+		#
+		if [[ ${release['branch']} != ${release['prefix']} ]]
+		then func=match
+		else func=patch
+		fi
+	fi
+
 	if [[ `declare -F _$func` ]]
 	then _$func "$@"
 	else warn "$func: unimplemented"; _help; false
@@ -388,28 +407,16 @@ main ()
 
 	verify_sanity_exit "$@"
 
-	# update tags before trying to parse 'describe' output
-	# since it determines closest tag
-	git fetch --tags --quiet ||
-		bomb "fetch failure"
-
-	# populate $release[] with info from current checkout
-	#
-	slurp_checkout
-
 	# checkout ops: branch name may be empty, indicating deploy checkout
-	# tagging ops: branch name will be used as the tag prefix
+	# tagging ops: branch name will be used as the tag prefix, and to
+	#   compare to the nearest-tag prefix (from "describe") to see if we
+	#   are on a rebase-fork development branch
 	#
 	release['branch']=`git symbolic-ref --quiet --short HEAD`
 
-	# detect when we're on a forked branch we rebase periodically
-	# (in which case "describe" will show the origin branch, not the branch
-	# we're on, since we just tagged the origin prior to a rebase so it's
-	# now the closest tag)
+	# handle case where no command specified (ie, default action)
+	# which heuristically determines probable desired action
 	#
-	if [[ ${release['branch']} != ${release['prefix']} ]]; then
-		release['forked']=1; fi
-
 	if ! [[ $command ]]
 	then
 		if ! [[ ${release['branch']} ]]
@@ -418,20 +425,31 @@ main ()
 			command=sync
 		else
 			# if on a branch, we're probably in the dev checkout,
-			# so we want to do a tag; use matching tag if we're in
-			# a rebase-fork, or default to incremental patch if
-			# we're on same branch as we were when doing last tag
+			# so we want to do a tag operation, but we cannot know
+			# yet if we want to 'match' or 'patch' because we have
+			# not yet slurped the checkout (slurping requires
+			# knowledge of the desired operation, so there's a
+			# chicken-egg dilemma), so in that case, use a special
+			# indirect command to defer selection until call()
 			#
-			if [[ ${release['forked']} ]]; then
-				command=match
-			else
-				command=patch
-			fi
+			command=defer
 		fi
 	fi
 
 	if ! is_valid_op; then
 		warn "$command: unrecognized command"; _help; false; exit; fi
+
+	if is_checkout_op
+	then
+		# update tags before trying to parse 'describe' output
+		# since it determines closest tag
+		git fetch --tags --quiet ||
+			bomb "fetch failure"
+	fi
+
+	# populate $release[] with info from current checkout
+	#
+	slurp_checkout
 
 	if is_tagging_op
 	then
@@ -451,7 +469,7 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|match)$ ]]; }
+is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|match|defer)$ ]]; }
 is_checkout_op  () { [[ $command =~ ^(sync|next|prev|ver)$ ]]; }
 is_valid_op     () { is_tagging_op || is_checkout_op; }
 
@@ -459,7 +477,7 @@ _init    () { do_tag 0 0 0; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
-_match   () { do_tag $majorlvl $minorlvl $patchlvl; }
+_match   () { do_tag $majorlvl $minorlvl $patchlvl; }	# for rebase forks
 
 _sync    () { do_checkout last; }
 _next    () { do_checkout next; }
