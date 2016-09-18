@@ -376,14 +376,11 @@ call ()
 	#
 	if [[ $func == 'defer' ]]
 	then
-		# detect when we're on a forked branch we rebase
-		# periodically (in which case "describe" will show the
-		# origin branch, not the branch we're on, since we just
-		# tagged the origin prior to a rebase so it's now the
-		# closest tag) or default to incremental patch if we're
-		# on same branch as we were when doing last tag
+		# if we're on a rebase fork (as determined earlier) do a
+		# match command or if not, default to incremental patch
+		# if we're on same branch as we were when doing last tag
 		#
-		if [[ ${release['branch']} != ${release['prefix']} ]]
+		if [[ ${release['forked']} ]]
 		then func=match
 		else func=patch
 		fi
@@ -413,6 +410,14 @@ main ()
 	#   are on a rebase-fork development branch
 	#
 	release['branch']=`git symbolic-ref --quiet --short HEAD`
+
+	# detect when we're on a forked branch we rebase periodically
+	# (in which case "describe" will show the origin branch, not the branch
+	# we're on, since we just tagged the origin prior to a rebase so it's
+	# now the closest tag)
+	#
+	if [[ ${release['branch']} != ${release['prefix']} ]]; then
+		release['forked']=1; fi
 
 	# handle case where no command specified (ie, default action)
 	# which heuristically determines probable desired action
