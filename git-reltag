@@ -411,14 +411,6 @@ main ()
 	#
 	release['branch']=`git symbolic-ref --quiet --short HEAD`
 
-	# detect when we're on a forked branch we rebase periodically
-	# (in which case "describe" will show the origin branch, not the branch
-	# we're on, since we just tagged the origin prior to a rebase so it's
-	# now the closest tag)
-	#
-	if [[ ${release['branch']} != ${release['prefix']} ]]; then
-		release['forked']=1; fi
-
 	# handle case where no command specified (ie, default action)
 	# which heuristically determines probable desired action
 	#
@@ -455,6 +447,14 @@ main ()
 	# populate $release[] with info from current checkout
 	#
 	slurp_checkout
+
+	# detect the case where we're on a forked branch which we rebase
+	# periodically (in which case "describe" will show the origin branch,
+	# not the branch we're on, since we just tagged the origin prior to a
+	# rebase so it's now the closest tag)
+	#
+	if [[ ${release['branch']} != ${release['prefix']} ]]; then
+		release['forked']=1; fi
 
 	if is_tagging_op
 	then
