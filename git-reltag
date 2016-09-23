@@ -178,7 +178,7 @@ slurp_checkout ()
 				$field == 'minor' ||
 				$field == 'patch' \
 			]]; then
-				continue
+				true; return
 			else
 				# ...then stash field in the tag message array
 				#
@@ -186,7 +186,7 @@ slurp_checkout ()
 			fi
 		else
 			# skip any empty fields
-			continue
+			true; return
 		fi
 	}
 
