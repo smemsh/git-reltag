@@ -62,8 +62,10 @@ strdelim    () { (($# > 1)) && { local IFS="$1"; shift; printf -- "$*"; }; }
 
 verify_sanity_exit ()
 {
-	test -d .git || bomb "no gitdir"
-	test -w .git || bomb "cannot write to gitdir"
+	[[ `git rev-parse --show-toplevel` == $PWD ]] &&
+		[[ `git rev-parse --is-inside-work-tree` == 'true' ]] ||
+			bomb "must start from git worktree toplevel"
+	test -w "$PWD" || bomb "cannot write to gitdir"
 	changes_pending && bomb "aborting while changes are pending"
 }
 
