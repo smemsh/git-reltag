@@ -53,7 +53,7 @@ relpat=(
 ###
 
 warn        () { echo "$@" >&2; }
-bomb        () { echo "$@" >&2; exit 1; }
+bomb        () { echo "$@" >&2; false; exit; }
 
 strcat      () { strdelim '' "$@"; }
 strdelim    () { (($# > 1)) && { local IFS="$1"; shift; printf -- "$*"; }; }
