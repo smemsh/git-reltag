@@ -322,7 +322,7 @@ do_checkout ()
 	then
 		if [[ ${release['branch']} ]]
 		then warn "branch head matches desired tag, detaching..."
-		else bomb "desired tag already checked out"
+		else warn "desired tag already checked out"
 		fi
 	fi
 
