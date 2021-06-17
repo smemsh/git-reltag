@@ -21,10 +21,6 @@
 #   - refuses action in uncommitted repositories (dirty work area)
 #   - for tagging ops, checkout must have had commits since last tag
 #
-# stat:
-#   - used by author to develop and deploy
-#   - please inform if using
-#
 # scott@smemsh.net
 # http://smemsh.net/src/git-reltag/
 # http://spdx.org/licenses/GPL-2.0
