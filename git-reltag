@@ -9,6 +9,7 @@
 #   major: add new signed tag '<branch>-<X+1>.0.0'
 #   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
 #   match: add new signed tag matching last one (with different branch)
+#   exact: add new signed tag with $1 = major, $2 = minor, $3 = patch
 #
 # deploy:
 #   sync: fetch && verify && checkout, last tag on branch
@@ -472,8 +473,11 @@ main ()
 
 ##############################################################################
 
-is_tagging_op   () { [[ $command =~ ^(init|patch|minor|major|match|defer)$ ]]; }
-is_checkout_op  () { [[ $command =~ ^(sync|next|prev|ver)$ ]]; }
+pat_checkout_cmds='^(sync|next|prev|ver)$'
+pat_tagging_cmds='^(init|patch|minor|major|match|exact|defer)$'
+
+is_checkout_op  () { [[ $command =~ $pat_checkout_cmds ]]; }
+is_tagging_op   () { [[ $command =~ $pat_tagging_cmds ]]; }
 is_valid_op     () { is_tagging_op || is_checkout_op; }
 
 _init    () { do_tag 0 0 0; }
@@ -481,6 +485,7 @@ _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
 _match   () { do_tag $majorlvl $minorlvl $patchlvl; }	# for rebase forks
+_exact   () { do_tag ${1:?} ${2:?} ${3:?}; } # for skipping/discontiguous
 
 _sync    () { do_checkout last; }
 _next    () { do_checkout next; }
