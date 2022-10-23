@@ -462,7 +462,6 @@ main ()
 		# keep version components in separate global scalars we can
 		# manipulate to build tag name without altering $release[]
 		#
-		declare -g \
 		patchlvl=${release['patch']} \
 		majorlvl=${release['major']} \
 		minorlvl=${release['minor']} \
