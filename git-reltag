@@ -206,7 +206,7 @@ determine_desired_tag ()
 	# note: we narrow possible tags to prefix, which is based on
 	# describe of current checkout (and bypass if $tags['exact'] is set)
 	#
-	taglist=($(git tag --list "${release['prefix']}-*" | sort -V))
+	taglist=($(git tag -l "${release['prefix']}-*" | sort -V))
 	ntags=${#taglist[@]}
 	tags['last']=${taglist[ntags-1]}
 
