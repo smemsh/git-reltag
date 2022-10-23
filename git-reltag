@@ -408,7 +408,9 @@ main ()
 	#   compare to the nearest-tag prefix (from "describe") to see if we
 	#   are on a rebase-fork development branch
 	#
-	release['branch']=`git symbolic-ref --quiet --short HEAD`
+	local headrev=$(git symbolic-ref --quiet HEAD)
+	headrev=${headrev##*/} # no --short on old git
+	release['branch']=$headrev
 
 	# handle case where no command specified (ie, default action)
 	# which heuristically determines probable desired action
