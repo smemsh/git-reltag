@@ -63,7 +63,8 @@ verify_sanity_exit ()
 		[[ `git rev-parse --is-inside-work-tree` == 'true' ]] ||
 			bomb "must start from git worktree toplevel"
 	test -w "$PWD" || bomb "cannot write to gitdir"
-	changes_pending && bomb "aborting while changes are pending"
+	if changes_pending && ! ((optdirty))
+	then bomb "aborting while changes are pending"; fi
 }
 
 # - parses 'git describe' (or 'show' for initial tag) into $release[] dict
@@ -393,13 +394,23 @@ call ()
 
 main ()
 {
-	command=$1; shift
-
 	declare -A release      # fields initialized from current checkout
 	declare -a message      # carries commit message "field: value" strings
 
-	if [[ $command =~ ^(-h|-?-help)$ ]]; then
-		_help; exit; fi
+	optdirty=0
+
+	# 1/2
+	eval set -- $(getopt -n "${0##*/}" \
+		-o ah -l dirty,help -- "$@")
+	# 2/2
+	while true; do case $1 in
+	(-d|--dirty) optdirty=1; shift;;
+	(-h|--help) _help; exit;;
+	(--) shift; break;;
+	(*) echo "bad usage" >&2; false; return;;
+	esac; done
+
+	command=$1; shift
 
 	verify_sanity_exit "$@"
 
