@@ -23,7 +23,7 @@
 #   - for tagging ops, checkout must have had commits since last tag
 #
 # scott@smemsh.net
-# http://smemsh.net/src/git-reltag/
+# https://github.com/smemsh/git-reltag/
 # http://spdx.org/licenses/GPL-2.0
 #
 ##############################################################################

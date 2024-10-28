@@ -4,7 +4,7 @@ git-reltag
 Maintain signed version tags for release and manage deployment checkouts
 
 | scott@smemsh.net
-| http://smemsh.net/src/git-reltag/
+| https://github.com/smemsh/git-reltag/
 | http://spdx.org/licenses/GPL-2.0
 
 
