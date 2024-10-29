@@ -47,6 +47,7 @@ release subcommands
 :minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 :major: add new signed tag '<branch>-<X+1>.0.0'
 :init:  add new signed tag '<branch>-0.0.0' (use for first tag)
+:exact: add new signed tag '<branch>-$1.$2.$3'
 :match: add new signed tag matching last one (with different branch)
 
 
