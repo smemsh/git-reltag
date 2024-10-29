@@ -5,7 +5,7 @@ Maintain signed version tags for release and manage deployment checkouts
 
 | scott@smemsh.net
 | https://github.com/smemsh/git-reltag/
-| http://spdx.org/licenses/GPL-2.0
+| https://spdx.org/licenses/GPL-2.0
 
 
 Description
