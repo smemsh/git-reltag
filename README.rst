@@ -73,7 +73,7 @@ If no subcommand specified, default depends on current checkout:
 safeties
 --------
 
-- refuses action in uncommitted repositories (dirty work area)
+- refuses action in uncommitted repos (dirty work area) unless ``--dirty``
 - for tagging ops, checkout must have had commits since last tag
 - warns if checking out on branch (usual case is sync from detached tag)
 
