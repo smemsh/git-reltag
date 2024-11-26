@@ -39,6 +39,16 @@ Subcommands are provided for tagging, checkout, and initialization:
   ordinals (resetting less significant ones to zero); a subcommand is
   provided for each of these intentions.
 
+On a new clone of master, to set up to follow the lastest tag::
+
+    git checkout @ && git reltag
+
+After the first time, only the latter command is needed to
+update to the lastest signed tag.  The script presumes to run in
+deploy mode if the current branch tip is detached, it will pull
+and checkout latest tag in current branch.  Otherwise it will do
+a release, defaulting to patch-level tag bump, and push.
+
 
 release subcommands
 -------------------
