@@ -7,7 +7,7 @@
 #   patch: add new signed tag '<branch>-<X>.<Y>.<Z+1>'
 #   minor: add new signed tag '<branch>-<X>.<Y+1>.0'
 #   major: add new signed tag '<branch>-<X+1>.0.0'
-#   init:  add new signed tag '<branch>-0.0.0' (use for first tag)
+#   init:  add new signed tag '<branch>-$1.$2.$3' first commit (default 0.0.0)
 #   match: add new signed tag matching last one (with different branch)
 #   exact: add new signed tag with $1 = major, $2 = minor, $3 = patch
 #
@@ -492,7 +492,7 @@ is_checkout_op  () { [[ $command =~ $pat_checkout_cmds ]]; }
 is_tagging_op   () { [[ $command =~ $pat_tagging_cmds ]]; }
 is_valid_op     () { is_tagging_op || is_checkout_op; }
 
-_init    () { do_tag 0 0 0; }
+_init    () { do_tag ${1:-0} ${2:-0} ${3:-0}; }
 _patch   () { do_tag $majorlvl $minorlvl $((++patchlvl)); }
 _minor   () { do_tag $majorlvl $((++minorlvl)) 0; }
 _major   () { do_tag $((++majorlvl)) 0 0; }
